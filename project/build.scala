@@ -5,6 +5,7 @@ import org.scalatra.sbt.PluginKeys._
 import com.earldouglas.xwp.JettyPlugin
 import com.mojolly.scalate.ScalatePlugin._
 import ScalateKeys._
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 
 object CrisisResponseSystemBuild extends Build {
   val Organization = "de.rb"
@@ -28,7 +29,8 @@ object CrisisResponseSystemBuild extends Build {
         "org.scalatra" %% "scalatra-scalate" % ScalatraVersion,
         "org.scalatra" %% "scalatra-specs2" % ScalatraVersion % "test",
         "ch.qos.logback" % "logback-classic" % "1.1.3" % "runtime",
-        "org.eclipse.jetty" % "jetty-webapp" % "9.2.14.v20151106" % "container",
+        "org.eclipse.jetty" % "jetty-webapp" % "9.1.5.v20140505" % "compile;container",
+        "org.eclipse.jetty" % "jetty-plus" % "9.1.5.v20140505" % "compile;container",
         "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
       ),
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
@@ -44,5 +46,5 @@ object CrisisResponseSystemBuild extends Build {
         )
       }
     )
-  ).enablePlugins(JettyPlugin)
+  ).enablePlugins(JettyPlugin,JavaAppPackaging)
 }
