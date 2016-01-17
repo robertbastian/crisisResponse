@@ -1,6 +1,6 @@
 language: scala
 deploy:
   provider: heroku
-  app: crisis-response
+  app: crisis-response-system
   api_key:
     secure: mFKI8xXuhmU/aPyiBNJaQMiRzHLjFBFGw94tlbwzn01O+XZVqdXD3WXnnWYzVt3Xiy3EPxV6YLNhG/jo+4XRldpYyY0BDDryYQVX9ib4p16YCO17ZWnRBviBVw/+hnybpbQH48MY8RNHZbfSdzy/SAPZFMhQAL3tejR/7m9N49SQ1foaDphAFcI/GFqUZ57THDs/DmTqy9Xy/6aCbalIIVihjHo5+/QvBZ/XvMzKPYwtDxq5p/ccV9jEgKl8iZMCa8jBgsQ2cR49BEhpkasmhG7TUpL9yJdLsmAk4wVuad//ZKQXsQQs/Ut/hld9Yqxr+6EDHybmW/GkJdXP0yCFbFCnsBkRQ9eMDR13p+gFw/cvE5sgXT4mPN2211civknUdQHpvxwabptmX6PXxcwmMnlc4xWoXWBSQcj/HO9uLZpyYzkyv+Q5/uPqoRMGFo7yMANesc9UTDWjCoGqK/GfMj3ghJVTV0wIoqfNZx0nx/kLNRf7K99BXY4BHtDt2Oy2b8ytF3MlX3WNI7AssLJXx3P7a2vtaHI/YX+m8G2ccwA21g8tI7Zrb31+67yfyL4GScYy/KEfQ2ivLV/jI/iHsGf/2rZljStNuhfr3SrHTdS2W12t2YJF3kensGBuejj2vfyvaXOB2uA2j2k+oWuXAzpPPWxdqOVoR6QlqiC8UV4=
