@@ -30,7 +30,7 @@ build/*
 logs/*
 
 # sbt specific
-/project/setup_env.sh
+project/setup_env.sh
 target/
 project/boot
 lib_managed/*
