@@ -1,5 +1,6 @@
+import View.UiServer
 import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.{ DefaultServlet, ServletContextHandler }
+import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.webapp.WebAppContext
 
 object JettyLauncher {
@@ -10,7 +11,7 @@ object JettyLauncher {
     val context = new WebAppContext()
     context setContextPath "/"
     context.setResourceBase("src/main/webapp")
-    context.addServlet(classOf[de.rb.MyScalatraServlet], "/*")
+    context.addServlet(classOf[UiServer], "/*")
     context.addServlet(classOf[DefaultServlet], "/")
 
     server.setHandler(context)
