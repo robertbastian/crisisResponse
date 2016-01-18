@@ -11,6 +11,6 @@ class ApiServerSpec extends ScalatraSpec { def is = s2"""
   addServlet(classOf[ApiServer], "/*")
 
   def t1 = get("/tweet") {
-    body must be equalTo "[{\"id\":1,\"text\":\"@piersmorgan @Teddy_Jenkins very sad that #WalterScott was murdered by the very people sworn to protect him\"}]"
+    body must be equalTo "{\"id\":1,\"text\":\"@piersmorgan @Teddy_Jenkins very sad that #WalterScott was murdered by the very people sworn to protect him\",\"author\":3148,\"latitude\":55.8448,\"longitude\":-4.29526,\"language\":\"EN\",\"tension\":0}"
   }
 }

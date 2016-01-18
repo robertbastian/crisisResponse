@@ -1,14 +1,11 @@
--@ val String = "Crisis Response System"
--@ val List[String]
--@ val List[String]
--@ val String = "crisisResponse"
--@ val String = "AppController"
+-@ val css: List[String]
+-@ val js: List[String]
 !!! 5
-html(lang="en" ng-app=ngApp)
+html(lang="en" ng-app="crisisResponse")
   head
     meta(charset="utf-8")
     meta(http-equiv="X-UA-Compatible" content="IE=edge")
-    title= title
+    title= "Crisis Response System"
     meta(name="description" content="")
     meta(name="viewport" content="width=device-width, initial-scale=1")
 
@@ -20,7 +17,7 @@ html(lang="en" ng-app=ngApp)
       link(rel="stylesheet" href=file)
     script(src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js")
 
-  body(ng-controller=ngController)
+  body(ng-controller="AppController")
 
     .container
       .text-center

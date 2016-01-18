@@ -16,7 +16,7 @@ class UiServer extends ScalatraServlet with ScalateSupport {
     layoutTemplate(
       "/WEB-INF/default.jade",
       "js" -> servletContext.getResourcePaths("/js").toList,
-      "css" -> servletContext.getResourcePaths("styles").toList
+      "css" -> servletContext.getResourcePaths("/styles").toList
     )
   }
 }
