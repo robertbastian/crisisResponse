@@ -41,10 +41,10 @@ object ImportController {
     // TODO make this a communicating actor for status reports
     f map { case (raw, coll_id) =>
 
-      val users = raw.map(_.author).distinct.map(User(_,coll_id))
+      val users = raw.map(_.author.toLowerCase).distinct.map(User(_,coll_id))
       users.foreach(UserMetrics.compute)
 
-      val tweets = raw.map(i => Tweet(None,i.text,i.author,new Timestamp(i.time.getTime),coll_id,if (i.longitude == 0 && i.latitude == 0) None else Some(i.latitude,i.longitude)))
+      val tweets = raw.map(i => Tweet(None,i.text,i.author.toLowerCase,new Timestamp(i.time.getTime),coll_id,if (i.longitude == 0 && i.latitude == 0) None else Some(i.latitude,i.longitude)))
       tweets.foreach(TweetMetrics.compute)
 
       (for {

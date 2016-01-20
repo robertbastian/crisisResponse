@@ -22,7 +22,7 @@ class ServerSpec extends ScalatraSpec with JsonMatchers { def is = s2"""
     body must /("id" -> 1)
     body must /("text" -> "@piersmorgan @Teddy_Jenkins very sad that #WalterScott was murdered by the very people sworn to protect him")
     body must /("author" -> "grantcoll")
-    body must */(-4.29525899887085)
+    body must */(-4.295259)
   }
 
   def t3 = get("/tweet/0"){
