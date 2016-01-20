@@ -13,44 +13,39 @@ object CrisisResponseSystemBuild extends Build {
   val ScalaVersion = "2.11.7"
   val ScalatraVersion = "2.4.0"
 
+
   lazy val project = Project (
     "crisis-response-system",
     file("."),
-    settings = ScalatraPlugin.scalatraSettings ++ scalateSettings ++ Seq(
+    settings = ScalatraPlugin.scalatraSettings ++ Seq(
       organization := Organization,
       name := Name,
       version := Version,
       scalaVersion := ScalaVersion,
       resolvers += Classpaths.typesafeReleases,
-      resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases",
+      scalacOptions ++= Seq("-unchecked", "-deprecation","-feature"),
       libraryDependencies ++= Seq(
-        "org.scalatra" %% "scalatra" % ScalatraVersion,
-        "org.scalatra" %% "scalatra-scalate" % ScalatraVersion,
-        "org.scalatra" %% "scalatra-specs2" % ScalatraVersion % "test",
-        "ch.qos.logback" % "logback-classic" % "1.1.3" % "runtime",
-        "org.eclipse.jetty" % "jetty-webapp" % "9.1.5.v20140505" % "compile;container",
-        "org.eclipse.jetty" % "jetty-plus" % "9.1.5.v20140505" % "compile;container",
-        "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
-        "org.scalatra" %% "scalatra-json" % "2.4.0",
-        "org.json4s"   %% "json4s-jackson" % "3.3.0",
-        "com.typesafe.slick" %% "slick" % "3.1.1",
-        "org.slf4j" % "slf4j-nop" % "1.6.4",
-        "mysql" % "mysql-connector-java" % "5.1.38",
-        "com.mchange" % "c3p0" % "0.9.5.2",
-        "org.twitter4j" % "twitter4j-stream" % "4.0.4"
-      ),
-      scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
-        Seq(
-          TemplateConfig(
-            base / "webapp" / "WEB-INF" / "templates",
-            Seq.empty,  /* default imports should be added here */
-            Seq(
-              Binding("context", "_root_.org.scalatra.scalate.ScalatraRenderContext", importMembers = true, isImplicit = true)
-            ),  /* add extra bindings here */
-            Some("templates")
-          )
-        )
-      }
+        // Scalatra
+        "org.scalatra" %% "scalatra" % "latest.integration",
+        // Tests
+        "org.scalatra" %% "scalatra-specs2" % "latest.integration" % "test",
+        "org.specs2" % "specs2_2.11" % "3.7" % "test",
+        // Container
+        "org.eclipse.jetty" % "jetty-webapp" % "latest.integration" % "compile;container",
+//        "org.eclipse.jetty" % "jetty-plus" % "latest.integration" % "compile;container",
+        "javax.servlet" % "javax.servlet-api" % "latest.integration" % "provided",
+        // JSON
+        "org.scalatra" %% "scalatra-json" % "latest.integration",
+        "org.json4s" % "json4s-jackson_2.11" % "3.3.0",
+        // DB
+        "com.typesafe.slick" %% "slick" % "latest.integration",
+        "mysql" % "mysql-connector-java" % "latest.integration",
+        "com.mchange" % "c3p0" % "latest.integration",
+        // Twitter
+        "org.twitter4j" % "twitter4j-stream" % "latest.integration",
+        //CSV
+        "com.github.marklister" %% "product-collections" % "1.4.2"
+      )
     )
   ).enablePlugins(JettyPlugin,JavaAppPackaging)
 }

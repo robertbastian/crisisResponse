@@ -1,12 +1,11 @@
-package API
+package API.data
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import org.scalatra.ScalatraServlet
 import slick.driver.MySQLDriver.api.{Database => SDB}
 
-trait Database extends ScalatraServlet {
+object DatabaseConnection {
 
-  protected lazy val db = SDB.forDataSource(connectionPool)
+  lazy val db = SDB.forDataSource(connectionPool)
 
   private lazy val connectionPool = {
     val c = new ComboPooledDataSource
@@ -20,8 +19,5 @@ trait Database extends ScalatraServlet {
     c
   }
 
-  abstract override def destroy = {
-    connectionPool.close
-    super.destroy
-  }
+  def close = connectionPool.close
 }

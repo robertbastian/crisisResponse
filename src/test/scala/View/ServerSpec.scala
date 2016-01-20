@@ -3,7 +3,7 @@ package View
 import org.scalatra.test.specs2._
 import org.specs2.Specification
 
-class UiServerSpec extends Specification with BaseScalatraSpec { def is = s2"""
+class ServerSpec extends Specification with BaseScalatraSpec { def is = s2"""
 
   GET / on UiServer should give 200        $t0
   GET / must contain assets                $t2
@@ -11,7 +11,7 @@ class UiServerSpec extends Specification with BaseScalatraSpec { def is = s2"""
 
   """
 
-  addServlet(classOf[UiServer], "/*")
+  addServlet(classOf[Server], "/*")
 
   def t0 = get("/") {
     status should be equalTo 200
