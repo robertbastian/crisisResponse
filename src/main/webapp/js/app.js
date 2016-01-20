@@ -8,7 +8,9 @@ angular.module('crisisResponse', [
   'crisisResponse.analysis'
 ]).
 config(['$routeProvider', function($routeProvider) {
-
+  $routeProvider.when("/",{
+    redirectTo: "/collection"
+  })
 }])
 .controller('AppController', function($scope){
   $scope.tab = 0;
