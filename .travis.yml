@@ -1,6 +1,11 @@
 language: scala
+
 scala:
   - 2.11.7
+
+jdk:
+  - oraclejdk8
+
 deploy:
   provider: heroku
   app: crisis-response-system
