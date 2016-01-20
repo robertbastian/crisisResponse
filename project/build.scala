@@ -32,7 +32,7 @@ object CrisisResponseSystemBuild extends Build {
         "org.specs2" % "specs2_2.11" % "3.7" % "test",
         // Container
         "org.eclipse.jetty" % "jetty-webapp" % "latest.integration" % "compile;container",
-//        "org.eclipse.jetty" % "jetty-plus" % "latest.integration" % "compile;container",
+        "org.eclipse.jetty" % "jetty-plus" % "latest.integration" % "compile;container",
         "javax.servlet" % "javax.servlet-api" % "latest.integration" % "provided",
         // JSON
         "org.scalatra" %% "scalatra-json" % "latest.integration",
