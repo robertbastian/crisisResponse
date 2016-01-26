@@ -1,10 +1,12 @@
 import com.earldouglas.xwp.JettyPlugin
+import com.mojolly.scalate.ScalatePlugin.ScalateKeys._
+import com.mojolly.scalate.ScalatePlugin._
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import org.scalatra.sbt._
 import sbt.Keys._
 import sbt._
 
-object build extends Build {
+object CrisisResponseSystemBuild extends Build {
   val Organization = "de.rb"
   val Name = "Crisis Response System"
   val Version = "0.1.0-SNAPSHOT"
@@ -30,7 +32,7 @@ object build extends Build {
         "org.specs2" % "specs2_2.11" % "3.7" % "test",
         // Container
         "org.eclipse.jetty" % "jetty-webapp" % "latest.integration" % "compile;container",
-        "ch.qos.logback" % "logback-classic" % "1.1.3",
+        "org.eclipse.jetty" % "jetty-plus" % "latest.integration" % "compile;container",
         "javax.servlet" % "javax.servlet-api" % "latest.integration" % "provided",
         // JSON
         "org.scalatra" %% "scalatra-json" % "latest.integration",

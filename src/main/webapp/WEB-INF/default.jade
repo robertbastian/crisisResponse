@@ -1,0 +1,39 @@
+-@ val css: List[String]
+-@ val js: List[String]
+!!! 5
+html(lang="en" ng-app="crisisResponse")
+  head
+    meta(charset="utf-8")
+    meta(http-equiv="X-UA-Compatible" content="IE=edge")
+    title= "Crisis Response System"
+    meta(name="description" content="")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+
+    link(rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/normalize.css")
+    link(rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/main.css")
+    link(rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css")
+    link(rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css")
+    - for (file <- css)
+      link(rel="stylesheet" href=file)
+    script(src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js")
+
+  body(ng-controller="AppController")
+
+    .container
+      .text-center
+        ul.nav.nav-pills
+          li(role="presentation" ng-class="{active: tab == 0}" ng-click="changeTab(0)")
+            a(href="#/collection") Collection
+          li(role="presentation" ng-class="{active: tab == 1}" ng-click="changeTab(1)")
+            a(href="#/selection") Selection
+          li(role="presentation" ng-class="{active: tab == 2}" ng-click="changeTab(2)")
+            a(href="#/analysis") Collection
+
+      div(ng-view)
+
+    script(src="bower_components/angular/angular.js")
+    script(src="bower_components/angular-route/angular-route.js")
+    script(src="bower_components/jquery/dist/jquery.min.js")
+    script(src="bower_components/bootstrap/dist/js/bootstrap.js")
+    - for (file <- js)
+      script(src=file)
