@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/normalize.css"/>
     <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/main.css"/>
     <link rel="stylesheet" href="bower_components/angular-material/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/styles/app.css"/>
 
     <script src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js"></script>
@@ -21,7 +22,7 @@
         </div>
         <span flex></span>
         <md-tabs md-selected="0" md-center-tabs class="md-primary">
-            <md-tab ng-repeat="tab in tabs" md-on-select="switchTab(tab)" md-active="isActive(tab)" label="{{tab.title}}"></md-tab>
+            <md-tab ng-repeat="tab in tabs" md-on-select="switchTab(tab)" md-active="isActive(tab)" label="{{tab.title}}" ng-disabled="tab.disabled()"></md-tab>
         </md-tabs>
         <span flex></span>
         <div class="md-toolbar-tools">

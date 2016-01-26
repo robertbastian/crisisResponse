@@ -9,15 +9,44 @@ angular.module('crisisResponse.collection', ['ngRoute'])
   });
 }])
 
-.controller('CollectionController', function($scope,$http) {
+.controller('CollectionController', function($scope,$http,$mdDialog,$location,gloVars) {
   $scope.collections = [];
-  $scope.selectedCollection = null;
-  $scope.collections = $http.get("/api/collection/")
-  .then(function success(response){
-    $scope.collections = response.data;
-    for (var i = 0; i < $scope.collections.length && $scope.selectedCollection == null; i++){
-      if ($scope.collections[i].ready)
-        $scope.selectedCollection = $scope.collections[i]
-    }
-  })
+
+  loadCollections();
+
+  function loadCollections() {
+    $http.get("/api/collection/").then(function(response) {
+      $scope.collections = response.data;
+    })
+  }
+
+  function deleteCollection(collection){
+    $http.delete("/api/collection/"+collection.id).then(function(){
+      loadCollections();
+    })
+  }
+
+  $scope.selectCollection = function(collection){
+    gloVars.collection(collection);
+    $location.path("/selection");
+  }
+
+  $scope.active = function(collection){
+    return collection.id == gloVars.collection().id;
+  }
+
+
+  $scope.delete = function(ev,collection) {
+    var confirm = $mdDialog.confirm()
+      .title('Do you really want to delete this collection?')
+      .textContent("The collection "+collection.name+" contains "+collection.size+" tweets.")
+      .ariaLabel("Confirm deletion")
+      .targetEvent(ev)
+      .ok("Delete")
+      .cancel("Cancel");
+    $mdDialog.show(confirm).then(function() {
+      deleteCollection(collection)
+    });
+  };
+
 });

@@ -9,6 +9,6 @@ angular.module('crisisResponse.selection', ['ngRoute'])
   });
 }])
 
-.controller('SelectionController', [function() {
-
-}]);
+.controller('SelectionController', function($scope, gloVars) {
+  $scope.collection = gloVars.collection
+});

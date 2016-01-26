@@ -1,22 +1,38 @@
-<div layout="columns">
+<div layout="row">
+
+
+    <md-card flex="50" flex-offset="25">
+        <md-card-title class="md-headline">Select a collection</md-card-title>
+        <md-card-content>
+            <md-progress-circular md-mode="indeterminate" ng-hide="collections.length > 0"></md-progress-circular>
+
+            <md-list ng-show="collections.length > 0">
+                <md-list-item ng-repeat="collection in collections" ng-click="selectCollection(collection)" class="md-2-line" ng-disabled="!collection.ready">
+                    <!--<img alt="{{ person.name }}" ng-src="{{ person.img }}" class="md-avatar" />-->
+                    <div class="md-list-item-text">
+                        <h3>{{ collection.name }}</h3>
+                        <p>{{collection.ready ? "Ready" : "Processing..."}}</p>
+                    </div>
+                    <md-icon ng-click="delete($event,collection)" aria-label="Delete collection" class="md-secondary md-hue-3 material-icons md-warn">delete</md-icon>
+                </md-list-item>
+            </md-list>
+        </md-card-content>
+    </md-card>
+
+</div>
+<div layout="row">
+
     <md-card flex="50">
         <md-card-title class="md-headline">Import CSV</md-card-title>
         <md-card-content>
 
         </md-card-content>
     </md-card>
+
     <md-card flex="50">
-        <md-card-title class="md-headline">Select a collection</md-card-title>
+        <md-card-title class="md-headline">Collect in real-time</md-card-title>
         <md-card-content>
-            <md-progress-circular md-mode="indeterminate" ng-show="collections.size == 0"></md-progress-circular>
 
-            <md-radio-group ng-model="selectedCollection">
-                    <md-radio-button ng-value="collection" ng-disabled="!collection.ready" ng-repeat="collection in collections">
-                        <span>{{collection.name}}</span><br>
-                        <small>{{collection.ready ? "Ready" : "Processing..."}}</small>
-                    </md-radio-button>
-
-            </md-radio-group>
         </md-card-content>
     </md-card>
 </div>

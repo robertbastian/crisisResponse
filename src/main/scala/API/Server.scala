@@ -57,7 +57,7 @@ class Server extends ScalatraServlet
 
   delete("/collection/:id") {
     async {
-      CollectionDao.delete(params("id").toInt) map { _ => Ok() }
+      CollectionDao.delete(params("id").toInt) map { _ => Ok("true") }
     }
   }
 

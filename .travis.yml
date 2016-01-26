@@ -7,6 +7,11 @@ jdk:
 notifications:
   email: false
 
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
 deploy:
   provider: heroku
   app: crisis-response-system

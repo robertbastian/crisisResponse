@@ -20,14 +20,14 @@ angular.module('crisisResponse', [
 
 .config(function($mdThemingProvider) {
   $mdThemingProvider.theme('default')
-    .primaryPalette('amber')
+    .primaryPalette('lime')
 })
 
-.controller('AppController', function($scope,$location){
+.controller('AppController', function($scope,$location,gloVars){
   $scope.tabs = [
-    {title:"Collection",url:"/collection"},
-    {title:"Selection", url:"/selection"},
-    {title:"Analysis", url:"/analysis"}
+    {title:"Collection",url:"/collection", disabled: function(){ return false}},
+    {title:"Selection", url:"/selection", disabled: function(){ return gloVars.collection() == null}},
+    {title:"Analysis", url:"/analysis", disabled: function(){ return gloVars.filter() == null}}
   ];
 
   $scope.switchTab = function(tab) {
@@ -38,12 +38,22 @@ angular.module('crisisResponse', [
     return $location.path() == tab.url
   }
 
-  var originatorEv;
   $scope.openMenu = function($mdOpenMenu, ev) {
-    originatorEv = ev;
     $mdOpenMenu(ev);
   };
+})
 
+.service('gloVars', function () {
+  var collection = null;
+  var filter = null;
+  return {
+    collection: function(value) {
+      return arguments.length ? (collection = value) : collection;
+    },
+    filter: function(value){
+      return arguments.length ? (filter = value) : filter;
+    }
+  };
 });
 
 
