@@ -5,16 +5,45 @@ angular.module('crisisResponse', [
   'ngRoute',
   'crisisResponse.collection',
   'crisisResponse.selection',
-  'crisisResponse.analysis'
-]).
-config(['$routeProvider', function($routeProvider) {
+  'crisisResponse.analysis',
+  'ngMaterial',
+  'ngMdIcons'
+])
+
+.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
   $routeProvider.when("/",{
     redirectTo: "/collection"
   })
+
+  $locationProvider.html5Mode(false);
 }])
-.controller('AppController', function($scope){
-  $scope.tab = 0;
-  $scope.changeTab = function changeTab(tab){
-    $scope.tab = tab;
+
+.config(function($mdThemingProvider) {
+  $mdThemingProvider.theme('default')
+    .primaryPalette('amber')
+})
+
+.controller('AppController', function($scope,$location){
+  $scope.tabs = [
+    {title:"Collection",url:"/collection"},
+    {title:"Selection", url:"/selection"},
+    {title:"Analysis", url:"/analysis"}
+  ];
+
+  $scope.switchTab = function(tab) {
+    $location.path(tab.url)
   }
+
+  $scope.isActive = function(tab){
+    return $location.path() == tab.url
+  }
+
+  var originatorEv;
+  $scope.openMenu = function($mdOpenMenu, ev) {
+    originatorEv = ev;
+    $mdOpenMenu(ev);
+  };
+
 });
+
+

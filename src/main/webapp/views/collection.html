@@ -1,1 +1,22 @@
-<p>This is the partial for view 1.</p>
+<div layout="columns">
+    <md-card flex="50">
+        <md-card-title class="md-headline">Import CSV</md-card-title>
+        <md-card-content>
+
+        </md-card-content>
+    </md-card>
+    <md-card flex="50">
+        <md-card-title class="md-headline">Select a collection</md-card-title>
+        <md-card-content>
+            <md-progress-circular md-mode="indeterminate" ng-show="collections.size == 0"></md-progress-circular>
+
+            <md-radio-group ng-model="selectedCollection">
+                    <md-radio-button ng-value="collection" ng-disabled="!collection.ready" ng-repeat="collection in collections">
+                        <span>{{collection.name}}</span><br>
+                        <small>{{collection.ready ? "Ready" : "Processing..."}}</small>
+                    </md-radio-button>
+
+            </md-radio-group>
+        </md-card-content>
+    </md-card>
+</div>

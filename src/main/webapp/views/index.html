@@ -8,32 +8,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/normalize.css"/>
     <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/main.css"/>
-    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="bower_components/angular-material/angular-material.min.css">
     <link rel="stylesheet" href="/styles/app.css"/>
+
     <script src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js"></script>
+    <base href="/">
 </head>
-<body ng-controller="AppController">
-<div class="container">
-    <div class="text-center">
-        <ul class="nav nav-pills">
-            <li role="presentation" ng-class="{active: tab == 0}" ng-click="changeTab(0)">
-                <a href="#/collection">Collection</a>
-            </li>
-            <li role="presentation" ng-class="{active: tab == 1}" ng-click="changeTab(1)">
-                <a href="#/selection">Selection</a>
-            </li>
-            <li role="presentation" ng-class="{active: tab == 2}" ng-click="changeTab(2)">
-                <a href="#/analysis">Collection</a>
-            </li>
-        </ul>
-    </div>
-    <div ng-view="ng-view"></div>
-</div>
-<script src="bower_components/angular/angular.js"></script>
-<script src="bower_components/angular-route/angular-route.js"></script>
-<script src="bower_components/jquery/dist/jquery.min.js"></script>
-<script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+<body ng-controller="AppController" ng-cloak><md-content>
+    <md-toolbar  layout="row">
+        <div class="md-toolbar-tools">
+            <span>Crisis Response System</span>
+        </div>
+        <span flex></span>
+        <md-tabs md-selected="0" md-center-tabs class="md-primary">
+            <md-tab ng-repeat="tab in tabs" md-on-select="switchTab(tab)" md-active="isActive(tab)" label="{{tab.title}}"></md-tab>
+        </md-tabs>
+        <span flex></span>
+        <div class="md-toolbar-tools">
+            <md-menu>
+                <md-button aria-label="More info" class="md-icon-button" ng-click="$mdOpenMenu($event)">
+                    <ng-md-icon icon="info" fill="grey"></ng-md-icon>
+                </md-button>
+                <md-menu-content>
+                    <md-menu-item>
+                        <md-button href="http://github.com/robertbastian/crisisResponse" target="_blank">
+                            GitHub repo
+                        </md-button>
+                    </md-menu-item>
+                    <md-menu-divider></md-menu-divider>
+                    <md-menu-item>
+                        <md-button disabled="disabled">
+                            <span>&copy; 2016 Robert Bastian</span>
+                        </md-button>
+                    </md-menu-item>
+                </md-menu-content>
+            </md-menu>
+        </div>
+    </md-toolbar>
+
+    <div ng-view flex></div>
+
+
+
+
+</md-content>
+<script src="bower_components/angular/angular.min.js"></script>
+<script src="bower_components/angular-route/angular-route.min.js"></script>
+<script src="bower_components/angular-animate/angular-animate.min.js"></script>
+<script src="bower_components/angular-aria/angular-aria.min.js"></script>
+<script src="bower_components/angular-messages/angular-messages.min.js"></script>
+<script src="bower_components/angular-material/angular-material.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/angular-material-icons/0.6.0/angular-material-icons.min.js"></script>
+
 <script src="/js/analysis.js"></script>
 <script src="/js/selection.js"></script>
 <script src="/js/collection.js"></script>

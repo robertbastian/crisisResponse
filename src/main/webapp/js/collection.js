@@ -9,6 +9,15 @@ angular.module('crisisResponse.collection', ['ngRoute'])
   });
 }])
 
-.controller('CollectionController', [function() {
-
-}]);
+.controller('CollectionController', function($scope,$http) {
+  $scope.collections = [];
+  $scope.selectedCollection = null;
+  $scope.collections = $http.get("/api/collection/")
+  .then(function success(response){
+    $scope.collections = response.data;
+    for (var i = 0; i < $scope.collections.length && $scope.selectedCollection == null; i++){
+      if ($scope.collections[i].ready)
+        $scope.selectedCollection = $scope.collections[i]
+    }
+  })
+});
