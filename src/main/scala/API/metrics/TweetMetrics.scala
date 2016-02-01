@@ -12,6 +12,9 @@ object TweetMetrics {
 
     // TODO parallelize this
 
+    if (t.tension.isEmpty)
+      t.tension = Some(tension(t))
+
     if (t.recency.isEmpty)
       t.recency = Some(recency(t))
 
@@ -22,6 +25,7 @@ object TweetMetrics {
       t.proximity = Some(proximity(t))
   }
 
+  private def tension(t: Tweet): Double = r.nextGaussian()*2+5
   private def recency(t: Tweet): Double = r.nextGaussian()*2+5
   private def corroboration(t: Tweet): Double = r.nextGaussian()*2+5
   private def proximity(t: Tweet): Double = r.nextGaussian()*2+5

@@ -25,7 +25,11 @@
     <md-card flex="50">
         <md-card-title class="md-headline">Import CSV</md-card-title>
         <md-card-content>
-
+            <form name="import" ng-submit="upload()">
+                <input ng-model="import_.name" type="text"/>
+                <input ngf-select ng-model='import_.file' type="file"/>
+                <input type="submit" value='Submit'/>
+            </form>
         </md-card-content>
     </md-card>
 

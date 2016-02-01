@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('crisisResponse.collection', ['ngRoute'])
+angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
 
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/collection', {
@@ -9,7 +9,7 @@ angular.module('crisisResponse.collection', ['ngRoute'])
   });
 }])
 
-.controller('CollectionController', function($scope,$http,$mdDialog,$location,gloVars) {
+.controller('CollectionController', function($scope,$http,$mdDialog,$location,Upload,gloVars) {
   $scope.collections = [];
 
   loadCollections();
@@ -48,5 +48,18 @@ angular.module('crisisResponse.collection', ['ngRoute'])
       deleteCollection(collection)
     });
   };
+  
+  $scope.upload = function () {
+    console.log($scope.import_.file)
+    Upload.upload({
+      url: "/api/collection/"+$scope.import_.name,
+      data: {file: $scope.import_.file},
+      headers : {
+        'Content-Type': undefined
+      }
+    }).success(function (response) {
+      loadCollections()
+    });
+  }
 
 });
