@@ -10,6 +10,12 @@ angular.module('crisisResponse.selection', ['ngRoute'])
 }])
 
 .controller('SelectionController', function($scope, gloVars, $location) {
+
+  if (!gloVars.collection()){
+    $location.path("/collection");
+    return;
+  }
+
   $scope.collection = gloVars.collection;
 
   $scope.setFilter = function(filter){

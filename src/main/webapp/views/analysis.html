@@ -1,39 +1,62 @@
 <div layout="row" layout-fill>
 
-    <div layout="column" layout-fill style="position: relative;" flex="80">
-        <ui-gmap-google-map center='mapinfo.center' zoom='mapinfo.zoom'>
-
-        <ui-gmap-markers models="tweets" coords="'location'" fit click="markerClicked"></ui-gmap-markers>
-
-    </ui-gmap-google-map>
-
+    <div layout="column" flex="80">
+        <md-card flex="100" style="position: relative;" ng-show="view == 'map'">
+            <md-card-content>
+                <ui-gmap-google-map center="map.conf.center" zoom='map.conf.zoom'>
+                    <ui-gmap-markers models="tweets" coords="'location'" fit="true" click="map.markerClicked"></ui-gmap-markers>
+                </ui-gmap-google-map>
+            </md-card-content>
+        </md-card>
+        <md-card flex="100" style="position: relative;" ng-show="view == 'wordcloud'">
+            <div flex id="wordcloud"></div>
+        </md-card>
+        <md-card flex="100" style="position: relative;" ng-show="view == 'sng'">
+            <md-card-content>
+                Social network graph
+            </md-card-content>
+        </md-card>
     </div>
 
     <div layout="column" flex="20">
-        <md-card flex="50">
-            <md-card-title class="md-headline">Tweet</md-card-title>
+        <md-card>
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">View settings</span>
+                </md-card-header-text>
+            </md-card-header>
             <md-card-content>
-                <p ng-hide="details != null">No tweet selected</p>
-                <div ng-hide="details == null">
-                    <blockquote>{{details.text}}<br>- {{details.author.name}}</blockquote>
-                    <p>Recency: {{details.recency}}</p>
-                    <p>Corroboration: {{details.corroboration}}</p>
-                    <p>Proximity: {{details.proximity}}</p>
-                    <p>Competence: {{details.author.competence}}</p>
-                    <p>Popularity: {{details.author.popularity}}</p>
-                </div>
+                <md-radio-group ng-model="view" ng-change="viewChange()">
+                    <md-radio-button value="map" class="md-primary">Map</md-radio-button>
+                    <md-radio-button value="wordcloud">Word Cloud</md-radio-button>
+                    <md-radio-button value="sng">Social network graph</md-radio-button>
+                </md-radio-group>
             </md-card-content>
         </md-card>
-        <md-card flex="50">
-            <md-card-title class="md-headline">Settings</md-card-title>
+        <md-card ng-show="view == 'map'">
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Map settings</span>
+                </md-card-header-text>
+            </md-card-header>
             <md-card-content>
                 <p>{{tweets.length}} tweets</p>
             </md-card-content>
         </md-card>
+
+        <md-card ng-show="view == 'map'">
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Tweet Details</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content ng-show="map.selected.tweet">
+                <p class="md-block-1">{{map.selected.tweet.text}}</p>
+                <p class="md-caption"><a ng-href="https://twitter.com/{{map.selected.tweet.author.name}}">@{{map.selected.tweet.author.name}}</a>, {{map.selected.tweet.time | date: 'dd/MM/yyyy hh:mm'}}</p>
+                <canvas id="radar" class="chart chart-radar"
+                        chart-data="map.selected.graph" chart-labels="map.graphlabels">
+                </canvas>
+            </md-card-content>
+        </md-card>
     </div>
-    </div>
-
-
-
 </div>
-
