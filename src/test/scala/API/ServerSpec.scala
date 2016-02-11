@@ -31,8 +31,7 @@ class ServerSpec extends ScalatraSpec with JsonMatchers { def is = s2"""
 
   def t2 = get("/user/abcnews4jbruce"){
     status must be equalTo 200
-    body must /("Mount Pleasant, SC")
-    body must /#(1)/("name" -> "abcnews4jbruce")
+    body must /("name" -> "abcnews4jbruce")
   }
 
   def t4 = get("/user/definitely-not-a-valid-username"){
