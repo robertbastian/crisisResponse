@@ -8,7 +8,7 @@ case class Tweet (
   author: String,
   time: Timestamp,
   collection: Long,
-  location: Option[(Double,Double)] = None,
+  location: Option[Array[Double]] = None,
   var tension: Option[Double] = None,
   var recency: Option[Double] = None,
   var corroboration: Option[Double] = None,

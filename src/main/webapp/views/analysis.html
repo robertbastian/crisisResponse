@@ -1,1 +1,39 @@
-<p>This is the partial for view 3.</p>
+<div layout="row" layout-fill>
+
+    <div layout="column" layout-fill style="position: relative;" flex="80">
+        <ui-gmap-google-map center='mapinfo.center' zoom='mapinfo.zoom'>
+
+        <ui-gmap-markers models="tweets" coords="'location'" fit click="markerClicked"></ui-gmap-markers>
+
+    </ui-gmap-google-map>
+
+    </div>
+
+    <div layout="column" flex="20">
+        <md-card flex="50">
+            <md-card-title class="md-headline">Tweet</md-card-title>
+            <md-card-content>
+                <p ng-hide="details != null">No tweet selected</p>
+                <div ng-hide="details == null">
+                    <blockquote>{{details.text}}<br>- {{details.author.name}}</blockquote>
+                    <p>Recency: {{details.recency}}</p>
+                    <p>Corroboration: {{details.corroboration}}</p>
+                    <p>Proximity: {{details.proximity}}</p>
+                    <p>Competence: {{details.author.competence}}</p>
+                    <p>Popularity: {{details.author.popularity}}</p>
+                </div>
+            </md-card-content>
+        </md-card>
+        <md-card flex="50">
+            <md-card-title class="md-headline">Settings</md-card-title>
+            <md-card-content>
+                <p>{{tweets.length}} tweets</p>
+            </md-card-content>
+        </md-card>
+    </div>
+    </div>
+
+
+
+</div>
+

@@ -9,6 +9,14 @@ angular.module('crisisResponse.selection', ['ngRoute'])
   });
 }])
 
-.controller('SelectionController', function($scope, gloVars) {
-  $scope.collection = gloVars.collection
+.controller('SelectionController', function($scope, gloVars, $location) {
+  $scope.collection = gloVars.collection;
+
+  $scope.setFilter = function(filter){
+    gloVars.filter(filter);
+    $location.path("/analysis");
+  }
+
+  $scope.setFilter({});
+
 });

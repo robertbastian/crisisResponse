@@ -15,7 +15,7 @@
     <script src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js"></script>
     <base href="/">
 </head>
-<body ng-controller="AppController" ng-cloak><md-content>
+<body ng-controller="AppController" ng-cloak layout-fill><md-content layout-fill>
     <md-toolbar  layout="row">
         <div class="md-toolbar-tools">
             <span>Crisis Response System</span>
@@ -47,7 +47,7 @@
         </div>
     </md-toolbar>
 
-    <div ng-view flex></div>
+    <div ng-view></div>
 
 
 
@@ -61,6 +61,10 @@
 <script src="bower_components/angular-material/angular-material.min.js"></script>
 <script src="bower_components/ng-file-upload/ng-file-upload.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/angular-material-icons/0.6.0/angular-material-icons.min.js"></script>
+<script src='//maps.googleapis.com/maps/api/js?sensor=false'></script>
+<script src='bower_components/lodash/dist/lodash.min.js'></script>
+<script src='bower_components/angular-simple-logger/dist/angular-simple-logger.min.js'></script>
+<script src='bower_components/angular-google-maps/dist/angular-google-maps.min.js'></script>
 
 <script src="/js/analysis.js"></script>
 <script src="/js/selection.js"></script>

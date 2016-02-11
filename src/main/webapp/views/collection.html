@@ -26,9 +26,21 @@
         <md-card-title class="md-headline">Import CSV</md-card-title>
         <md-card-content>
             <form name="import" ng-submit="upload()">
-                <input ng-model="import_.name" type="text"/>
-                <input ngf-select ng-model='import_.file' type="file"/>
-                <input type="submit" value='Submit'/>
+                <md-input-container>
+                    <label>Collection name</label>
+                    <input ng-model="import_.name" type="text"/>
+                </md-input-container>
+                    <md-button class="md-primary md-raised">
+                        <label for="fileInput">Select .csv</label>
+                    </md-button>
+                <md-input-container>
+                    <input id="fileInput" name="file" type="file" class="ng-hide" accept="text/csv" ngf-select  ng-model='import_.file'>
+                    {{import_.file ? import_.file.name : ""}}
+                </md-input-container>
+                <md-input-container class="md-block" flex-gt-xs>
+                    <input type="submit" value='Process' class="md-primary md-button md-raised"/>
+                </md-input-container>
+
             </form>
         </md-card-content>
     </md-card>

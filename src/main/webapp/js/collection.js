@@ -9,13 +9,13 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
   });
 }])
 
-.controller('CollectionController', function($scope,$http,$mdDialog,$location,Upload,gloVars) {
+.controller('CollectionController', function($scope,$http,$mdDialog,$location,Upload,gloVars, $timeout) {
   $scope.collections = [];
 
   loadCollections();
 
   function loadCollections() {
-    $http.get("/api/collection/").then(function(response) {
+    return $http.get("/api/collection/").then(function(response) {
       $scope.collections = response.data;
     })
   }
@@ -50,15 +50,28 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
   };
   
   $scope.upload = function () {
-    console.log($scope.import_.file)
     Upload.upload({
       url: "/api/collection/"+$scope.import_.name,
       data: {file: $scope.import_.file},
       headers : {
         'Content-Type': undefined
       }
-    }).success(function (response) {
-      loadCollections()
+    }).then(function success(response) {
+      $scope.import_ = null
+      console.log(response)
+
+      var update = function(){
+        loadCollections().then(function(){
+          console.log($scope.collections)
+          if (!$scope.collections.filter(function(e,i){return e.id === response.data})[0].ready)
+            $timeout(update,5000)
+        })
+      };
+      update();
+
+    }, function error(e){
+      console.log(e)
+      alert(e.data);
     });
   }
 

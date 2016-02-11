@@ -1,5 +1,16 @@
 /* app css stylesheet */
+.angular-google-map-container {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
 
-.nav-pills {
-  display: inline-block;
+[ng-view] {
+    position: absolute;
+    top:62px;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }

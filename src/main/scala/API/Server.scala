@@ -19,7 +19,7 @@ class Server extends ScalatraServlet
 
   error {
     case _: SizeConstraintExceededException => RequestEntityTooLarge("10MB limit")
-    case e: Throwable => println(e.getMessage()); InternalServerError()
+    case e: Throwable => println(e.getMessage()); InternalServerError("Server error")
   }
 
   get("/tweet/:id") {
@@ -34,7 +34,7 @@ class Server extends ScalatraServlet
   get("/user/:name") {
     async {
       UserDao.get(params("name")) map {
-        case Some(u) => TwitterConnection.getUser(u) map { _.getLocation :: List(u) }
+        case Some(u) => Ok(u)
         case None    => NonExistent()
       }
     }
@@ -57,13 +57,25 @@ class Server extends ScalatraServlet
 
   delete("/collection/:id") {
     async {
-      CollectionDao.delete(params("id").toInt) map { _ => Ok("true") }
+      CollectionDao.delete(params("id").toInt) map { _ => Ok(true) }
     }
   }
 
   post("/collection/:name"){
     async {
-      ImportController(fileParams("file").getInputStream, params("name")) map { id => Ok(id) }
+      ImportController(fileParams("file").getInputStream, params("name")) map { id => Created(id) } recover { case e: IllegalArgumentException => BadRequest("\"Malformatted csv\"")}
+    }
+  }
+
+  post("/locations"){
+    async {
+      val (_,collection) = parsedBody.extract[(String,Long)]
+      TweetDao.locations(collection).map(_.map(r => JObject(
+                                                        ("id",JInt(r._1)),
+                                                        ("location",JArray(List(
+                                                          JDouble(r._2),JDouble(r._3)
+                                                        )))
+      )))
     }
   }
 
@@ -74,7 +86,7 @@ class Server extends ScalatraServlet
   private def NonExistent() = NotFound("Element does not exist")
 
   // Mapping future-errors to InternalServerError and wrapping everything up for Scalatra
-  private def async(f: => Future[Any]) = new AsyncResult {val is = f recover {case e => println(e.getMessage()); InternalServerError()}}
+  private def async(f: => Future[Any]) = new AsyncResult {val is = f }
 
   // Defining ExecutionContext, TODO use actor pool?
   override protected implicit def executor: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global

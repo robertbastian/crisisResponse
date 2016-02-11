@@ -30,4 +30,6 @@ object CollectionDao {
   def save(c: Collection): Future[Long] = db run ((collections returning collections.map(_.id)) += c) thenLog s"Inserting collection ${c.name}"
 
   def ready(id: Long) = db run collections.filter(_.id === id).map(_.ready).update(true) thenLog s"Setting collection $id to ready"
+
+
 }
