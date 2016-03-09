@@ -1,5 +1,5 @@
 /* app css stylesheet */
-.angular-google-map-container {
+ng-map,svg {
     position: absolute !important;
     top: 0;
     left: 0;
@@ -13,4 +13,21 @@
     left: 0;
     right: 0;
     bottom: 0;
+}
+
+.link {
+    fill: none;
+    stroke: #666;
+    stroke-width: 1.5px;
+}
+
+.node circle {
+    fill: #ccc;
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
+text {
+    font: 10px sans-serif;
+    pointer-events: none;
 }

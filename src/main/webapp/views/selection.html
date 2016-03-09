@@ -1,0 +1,97 @@
+<style>
+    .histogram {
+        position: relative;
+        height: 100px;
+        border-bottom: 1px solid  gray;
+    }
+    .brush .extent {
+        stroke: darkgray;
+        fill-opacity: .125;
+        shape-rendering: crispEdges;
+    }
+</style>
+<div layout="row" flex-offset="5">
+    <md-card flex="40" flex-offset="30">
+        <md-card-content>
+            <p class="md-headline" style="text-align: center">{{count.selected}}/{{count.all}} tweets selected</p>
+        </md-card-content>
+    </md-card>
+</div>
+<div layout="row">
+    <div layout="column" flex="30" flex-offset="5">
+        <md-card style="height:217px">
+            <md-card-content>
+                <md-checkbox ng-model="filter.noRetweets" ng-change="change()">No retweets</md-checkbox><br>
+                <md-checkbox ng-model="filter.hasLocation" ng-change="change()">Geotagged only</md-checkbox>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="column" flex="30">
+        <md-card >
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Sentiment</span>
+                    <span class="md-subhead">{{filter.sentiment ? filter.sentiment[0] + " to " + filter.sentiment[1] : "All"}}</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content>
+                <div id="sentiment" class="histogram"></div>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="column" flex="30">
+        <md-card>
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Time</span>
+                    <span class="md-subhead">{{filter.time ? (filter.time[0]*1000 | date:"MM/dd/yyyy, h:mma") + " to " + (filter.time[1]*1000 | date:"MM/dd/yyyy, h:mma") : "All"}}</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content>
+                <div id="time" class="histogram"></div>
+            </md-card-content>
+        </md-card>
+    </div>
+</div>
+<div layout="row">
+    <div layout="column" flex="30" flex-offset="5">
+        <md-card >
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Corroboration</span>
+                    <span class="md-subhead">{{filter.sentiment ? filter.corroboration[0] + " to " + filter.corroboration[1] : "All"}}</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content>
+                <div id="corroboration" class="histogram"></div>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="column" flex="30">
+        <md-card >
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Competence</span>
+                    <span class="md-subhead">{{filter.sentiment ? filter.competence[0] + " to " + filter.competence[1] : "All"}}</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content>
+                <div id="competence" class="histogram"></div>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="column" flex="30">
+        <md-card>
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Popularity</span>
+                    <span class="md-subhead">{{filter.popularity ? filter.popularity[0] + " to " + filter.popularity[1] : "All"}}</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content>
+                <div id="popularity" class="histogram"></div>
+            </md-card-content>
+        </md-card>
+    </div>
+</div>
+{{filter}}

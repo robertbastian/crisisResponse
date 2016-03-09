@@ -1,7 +1,7 @@
 package API.data
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import slick.driver.MySQLDriver.api.{Database => SDB}
+import slick.driver.PostgresDriver.api.{Database => SDB}
 
 object DatabaseConnection {
 
@@ -9,8 +9,8 @@ object DatabaseConnection {
 
   private lazy val connectionPool = {
     val c = new ComboPooledDataSource
-    c.setDriverClass("com.mysql.jdbc.Driver")
-    c.setJdbcUrl("jdbc:mysql://"+sys.env("DB_URL")+":3306/crisis")
+    c.setDriverClass("org.postgresql.Driver")
+    c.setJdbcUrl("jdbc:postgresql://"+sys.env("DB_URL")+":5432/main")
     c.setUser("root")
     c.setPassword(sys.env("DB_ROOT_PASSWORD"))
     c.setMinPoolSize(1)
@@ -19,5 +19,5 @@ object DatabaseConnection {
     c
   }
 
-  def close = connectionPool.close
+  def close() = connectionPool.close()
 }

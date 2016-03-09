@@ -27,12 +27,12 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
   }
 
   $scope.selectCollection = function(collection){
-    gloVars.collection(collection);
+    gloVars.setCollection(collection);
     $location.path("/selection");
   }
 
   $scope.active = function(collection){
-    return collection.id == gloVars.collection().id;
+    return collection.id == gloVars.filter().collection;
   }
 
 
@@ -57,21 +57,19 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
         'Content-Type': undefined
       }
     }).then(function success(response) {
-      $scope.import_ = null
-      console.log(response)
+      $scope.import_ = null;
 
       var update = function(){
         loadCollections().then(function(){
-          console.log($scope.collections)
-          if (!$scope.collections.filter(function(e,i){return e.id === response.data})[0].ready)
+          var newCollection = $scope.collections.filter(function(e,i){return e.id === response.data})
+          if (newCollection.length > 0 && newCollection[0].status < 4)
             $timeout(update,5000)
         })
       };
       update();
 
     }, function error(e){
-      console.log(e)
-      alert(e.data);
+      alert(e);
     });
   }
 

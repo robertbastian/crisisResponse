@@ -1,44 +1,36 @@
 package API.data
 
 import API.data.DatabaseConnection.db
-import API.model.Collection
+import API.model.{Tweet, Filter}
 import API.stuff.LoggableFuture._
-import slick.driver.MySQLDriver.api._
+import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
+import scala.collection.mutable
 
 object InteractionDao {
-
-  case class Word(text:String, weight:Int)
-
-  private class WordsTable(tag: Tag) extends Table[(Long,String,Int,Long)](tag, "Words"){
-    def id = column[Long]("id",O.PrimaryKey,O.AutoInc)
-    def word = column[String]("word")
-    def count = column[Int]("count")
-    def collection = column[Long]("collection")
-    def * = (id,word,count,collection)
+  private class InteractionTable(tag: Tag) extends Table[(String,String,Long)](tag, "Interactions"){
+    def from = column[String]("from")
+    def to = column[String]("to")
+    def tweet = column[Long]("tweet")
+    def * = (from,to,tweet)
   }
 
-  private val words = TableQuery[WordsTable]
+  private val interactions = TableQuery[InteractionTable]
 
-  def save(collection: Long, map: Map[String,Int]): Future[Option[Int]] = db run (words  ++= map.map(e => (0L,e._1, e._2, collection))) thenLog s"Stored word counts for collection ${collection}"
+  def save(set: mutable.Set[(String,String,Long)]): Future[Option[Int]] =
+    db run (interactions ++= set) thenLog s"Stored ${set.size} interactions"
 
-  def getAll(collection: Long): Future[(Seq[Word],Seq[Word],Seq[Word])] = {
-    db run words.filter(_.collection == collection).map(e => (e.word,e.count)).result map { tuples =>
-      val hashtags = Seq.newBuilder[Word]
-      val users = Seq.newBuilder[Word]
-      val words = Seq.newBuilder[Word]
-      for (tuple <- tuples){
-        if (tuple._1.charAt(0) == '@')
-          users += Word(tuple._1,tuple._2)
-        else if (tuple._1.charAt(0) == '#')
-          hashtags += Word(tuple._1,tuple._2)
-        else
-          words += Word(tuple._1,tuple._2)
+  def getAll(f: Filter): Future[Seq[(String, String,Int)]] = db run (for {interaction <- interactions;tweet <- TweetDao.filtered(f) if interaction.tweet === tweet.id} yield interaction)
+    .groupBy(i => (i.from,i.to)).map{case ((from,to),a) => (from,to,a.length)}.result thenLog s"Getting interactions for $f"
 
-      }
-      (hashtags.result,users.result,words.result)
-    }
-  }
+  def getBy(s: String,f: Filter): Future[Seq[Tweet]] = db run (
+    for {
+      interaction <- interactions
+      tweet <- TweetDao.filtered(f)
+      if interaction.from === s || interaction.to === s
+      if tweet.id === interaction.tweet
+    } yield tweet).result thenLog s"Getting interactions by $s"
+
 }

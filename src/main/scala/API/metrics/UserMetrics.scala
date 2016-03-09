@@ -6,17 +6,14 @@ import scala.util.Random
 
 object UserMetrics {
 
+  //TODO
   val r = new Random()
 
-  // TODO parallelize this
-  def compute(u: User): Unit = {
-    if (u.popularity.isEmpty)
-      u.popularity = Some(popularity(u))
-
-    if (u.competence.isEmpty)
-      u.competence = Some(competence(u))
+  def apply(user: String): User = {
+    User(
+      user,
+      r.nextGaussian()*2+5,
+      r.nextGaussian()*2+5
+    )
   }
-
-  private def popularity(t: User): Double = r.nextGaussian()*2+5
-  private def competence(t: User): Double = r.nextGaussian()*2+5
 }

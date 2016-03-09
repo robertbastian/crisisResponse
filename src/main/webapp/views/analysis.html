@@ -3,18 +3,24 @@
     <div layout="column" flex="80">
         <md-card flex="100" style="position: relative;" ng-show="view == 'map'">
             <md-card-content>
-                <ui-gmap-google-map center="map.conf.center" zoom='map.conf.zoom'>
-                    <ui-gmap-markers models="tweets" coords="'location'" fit="true" click="map.markerClicked"></ui-gmap-markers>
-                </ui-gmap-google-map>
+                <ng-map zoom="2"></ng-map>
             </md-card-content>
         </md-card>
-        <md-card flex="100" style="position: relative;" ng-show="view == 'wordcloud'">
-            <div flex id="wordcloud"></div>
+
+        <div layout="row" flex="50" ng-show="view == 'wordcloud'">
+            <md-card flex="50" style="position: relative;" >
+                <div flex id="wordcloud-hashtags"></div>
+            </md-card>
+            <md-card flex="50" style="position: relative;">
+                <div flex id="wordcloud-users"></div>
+            </md-card>
+        </div>
+        <md-card flex="50" style="position: relative;" ng-show="view == 'wordcloud'">
+            <div flex id="wordcloud-words"></div>
         </md-card>
+
         <md-card flex="100" style="position: relative;" ng-show="view == 'sng'">
-            <md-card-content>
-                Social network graph
-            </md-card-content>
+            <md-card-content id="sng"></md-card-content>
         </md-card>
     </div>
 
@@ -28,7 +34,7 @@
             <md-card-content>
                 <md-radio-group ng-model="view" ng-change="viewChange()">
                     <md-radio-button value="map" class="md-primary">Map</md-radio-button>
-                    <md-radio-button value="wordcloud">Word Cloud</md-radio-button>
+                    <md-radio-button value="wordcloud">Word Clouds</md-radio-button>
                     <md-radio-button value="sng">Social network graph</md-radio-button>
                 </md-radio-group>
             </md-card-content>
@@ -40,22 +46,42 @@
                 </md-card-header-text>
             </md-card-header>
             <md-card-content>
-                <p>{{tweets.length}} tweets</p>
+                 <md-radio-group ng-model="mapmode" ng-change="changeMapView()">
+                     <md-radio-button value="clustered" class="md-primary">Clustered</md-radio-button>
+                     <md-radio-button value="heatmap">Heatmap</md-radio-button>
+                 </md-radio-group>
             </md-card-content>
         </md-card>
 
-        <md-card ng-show="view == 'map'">
+        <md-card ng-show="view == 'map' && mapmode == 'clustered'">
             <md-card-header>
                 <md-card-header-text>
                     <span class="md-title">Tweet Details</span>
                 </md-card-header-text>
             </md-card-header>
-            <md-card-content ng-show="map.selected.tweet">
-                <p class="md-block-1">{{map.selected.tweet.text}}</p>
-                <p class="md-caption"><a ng-href="https://twitter.com/{{map.selected.tweet.author.name}}">@{{map.selected.tweet.author.name}}</a>, {{map.selected.tweet.time | date: 'dd/MM/yyyy hh:mm'}}</p>
-                <canvas id="radar" class="chart chart-radar"
-                        chart-data="map.selected.graph" chart-labels="map.graphlabels">
+            <md-card-content ng-show="selected.tweet">
+                <p class="md-block-1">{{selected.tweet.text}}</p>
+                <p class="md-caption">@{{selected.tweet.author.name}}, {{selected.tweet.time | date: 'dd/MM/yyyy hh:mm'}}</p>
+                <canvas class="chart chart-radar" chart-data="selected.graph.data" chart-labels='selected.graph.labels'>
                 </canvas>
+            </md-card-content>
+        </md-card>
+        <md-card ng-show="view == 'sng'" style="overflow:scroll;height:800px;">
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">User Details</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content ng-show="selected.user">
+                <p class="md-block-1" ng-show="selected.tweets._1.length">@{{selected.user}} to others:
+                <ul>
+                    <li ng-repeat="tweet in selected.tweets._1">{{tweet.text}}</li>
+                </ul></p>
+
+                <p class="md-block-1" ng-show="selected.tweets._2.length">Others to @{{selected.user}}:
+                <ul>
+                    <li ng-repeat="tweet in selected.tweets._2">{{tweet.text}}<br><small>– @{{tweet.author}}</small></li>
+                </ul></p>
             </md-card-content>
         </md-card>
     </div>

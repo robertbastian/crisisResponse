@@ -39,12 +39,16 @@ object CrisisResponseSystemBuild extends Build {
         "org.json4s" % "json4s-jackson_2.11" % "3.3.0",
         // DB
         "com.typesafe.slick" %% "slick" % "latest.integration",
-        "mysql" % "mysql-connector-java" % "latest.integration",
+        "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
         "com.mchange" % "c3p0" % "latest.integration",
         // Twitter
         "org.twitter4j" % "twitter4j-stream" % "latest.integration",
         //CSV
-        "com.github.marklister" %% "product-collections" % "1.4.2"
+        "com.github.marklister" %% "product-collections" % "1.4.2",
+        // Text analysis
+        "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0",
+        "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" classifier "models",
+        "com.google.protobuf" % "protobuf-java" % "2.6.1"
       )
     )
   ).enablePlugins(JettyPlugin,JavaAppPackaging)

@@ -1,35 +1,51 @@
 package API.data
 
 import API.data.DatabaseConnection.db
-import API.model.{Collection, User}
-import slick.driver.MySQLDriver.api._
+import API.model.{Filter, Collection}
+import API.stuff.LoggableFuture._
+import slick.driver.PostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
-import API.stuff.LoggableFuture._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.collection.mutable.Set
 
 object WordsDao {
 
-  private class CollectionsTable(tag: Tag) extends Table[Collection](tag, "Collection"){
-    def id = column[Long]("id",O.PrimaryKey,O.AutoInc)
-    def name = column[String]("name")
-    def ready = column[Boolean]("ready")
+  case class Word(text:String, kind: String, weight:Int, sentiment: Int)
 
-    def * = (id.?,name,ready) <> (Collection.tupled, Collection.unapply)
+  private class WordsTable(tag: Tag) extends Table[(String,String,Int,Long)](tag, "Words"){
+    def word = column[String]("word")
+    def kind = column[String]("type")
+    def sentiment = column[Int]("sentiment")
+    def tweet = column[Long]("tweet")
+    def * = (word,kind,sentiment,tweet)
   }
 
-  private val collections = TableQuery[CollectionsTable]
+  private val words = TableQuery[WordsTable]
 
-  def get(i: Long): Future[Option[Collection]] = db run collections.filter(_.id === i).result.headOption thenLog s"Getting collection $i"
+  def save(set: Set[(String,String,Int,Long)]): Future[Option[Int]] = db run (words  ++= set) thenLog s"Stored word counts"
 
-  def delete(i: Long): Future[Int] = db run collections.filter(_.id === i).delete thenLog s"Removing collection $i"
+  def getAll(filter: Filter): Future[(Seq[Word],Seq[Word],Seq[Word])] = {
+    val query = (for {
+      word <- words
+      tweet <- TweetDao.filtered(filter)
+      if word.tweet === tweet.id
+    } yield word).groupBy(w => w.word)
+      .map{case (w,a) => (w,a.map(_.kind).max.get,a.length, a.map(_.sentiment).avg.get)}
 
-  def all: Future[Seq[Collection]] = db run collections.result thenLog s"Getting all collections"
+    val hashtags = Seq.newBuilder[Word]
+    val users = Seq.newBuilder[Word]
+    val words_ = Seq.newBuilder[Word]
 
-  def save(c: Collection): Future[Long] = db run ((collections returning collections.map(_.id)) += c) thenLog s"Inserting collection ${c.name}"
-
-  def ready(id: Long) = db run collections.filter(_.id === id).map(_.ready).update(true) thenLog s"Setting collection $id to ready"
-
-
+    db.stream(query.result).mapResult(Word.tupled).foreach(word => {
+      word.text.charAt(0) match {
+        case '@' => users += word
+        case '#' => hashtags += word
+        case _ => words_ += word
+      }
+    }) map { _ =>
+      (hashtags.result,users.result,words_.result)
+    }
+  }
 }

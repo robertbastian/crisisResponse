@@ -7,11 +7,11 @@
             <md-progress-circular md-mode="indeterminate" ng-hide="collections.length > 0"></md-progress-circular>
 
             <md-list ng-show="collections.length > 0">
-                <md-list-item ng-repeat="collection in collections" ng-click="selectCollection(collection)" class="md-2-line" ng-disabled="!collection.ready">
+                <md-list-item ng-repeat="collection in collections" ng-click="selectCollection(collection)" class="md-2-line" ng-disabled="collection.status < 4">
                     <!--<img alt="{{ person.name }}" ng-src="{{ person.img }}" class="md-avatar" />-->
                     <div class="md-list-item-text">
                         <h3>{{ collection.name }}</h3>
-                        <p>{{collection.ready ? "Ready" : "Processing..."}}</p>
+                        <p>{{collection.status == 4 ? "Ready" : "...".repeat(collection.status+1)}}</p>
                     </div>
                     <md-icon ng-click="delete($event,collection)" aria-label="Delete collection" class="md-secondary md-hue-3 material-icons md-warn">delete</md-icon>
                 </md-list-item>

@@ -24,19 +24,24 @@ angular.module('crisisResponse', [
 })
 
 .controller('AppController', function($scope,$location,gloVars){
+
+  if (!gloVars.filter() && $location.path() != "/collection"){
+    $location.path("/collection");
+  }
+
   $scope.tabs = [
     {title:"Collection",url:"/collection", disabled: function(){ return false}},
-    {title:"Selection", url:"/selection", disabled: function(){ return gloVars.collection() == null}},
+    {title:"Selection", url:"/selection", disabled: function(){ return gloVars.filter() == null}},
     {title:"Analysis", url:"/analysis", disabled: function(){ return gloVars.filter() == null}}
   ];
 
   $scope.switchTab = function(tab) {
     $location.path(tab.url)
-  }
+  };
 
   $scope.isActive = function(tab){
     return $location.path() == tab.url
-  }
+  };
 
   $scope.openMenu = function($mdOpenMenu, ev) {
     $mdOpenMenu(ev);
@@ -44,14 +49,27 @@ angular.module('crisisResponse', [
 })
 
 .service('gloVars', function () {
-  var collection = null;
   var filter = null;
+  var collectionDetails = null;
   return {
-    collection: function(value) {
-      return arguments.length ? (collection = value) : collection;
+    setCollection: function(collection){
+      filter = {
+        collection: collection.id,
+        time: null,
+        sentiment: null,
+        competence: null,
+        popularity: null,
+        corroboration: null,
+        hasLocation: false,
+        noRetweets: true
+      };
+      collectionDetails = collection;
     },
-    filter: function(value){
-      return arguments.length ? (filter = value) : filter;
+    filter: function(){
+      return filter;
+    },
+    collectionDetails: function() {
+      return collectionDetails;
     }
   };
 });
