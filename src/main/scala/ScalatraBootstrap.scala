@@ -8,7 +8,7 @@ class ScalatraBootstrap extends LifeCycle {
   }
 
   override def destroy(context: ServletContext): Unit = {
-    API.data.DatabaseConnection.close
+    API.database.DatabaseConnection.close
     super.destroy(context)
   }
 }

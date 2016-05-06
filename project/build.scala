@@ -47,8 +47,12 @@ object CrisisResponseSystemBuild extends Build {
         "com.github.marklister" %% "product-collections" % "1.4.2",
         // Text analysis
         "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0",
-        "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" classifier "models",
-        "com.google.protobuf" % "protobuf-java" % "2.6.1"
+        "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" classifier "models-english",
+        "com.google.protobuf" % "protobuf-java" % "2.6.1",
+        // Geocoding
+        "com.google.maps" % "google-maps-services" % "0.1.12",
+        // Clustering
+        "org.carrot2" % "carrot2-core" % "3.5.0"
       )
     )
   ).enablePlugins(JettyPlugin,JavaAppPackaging)

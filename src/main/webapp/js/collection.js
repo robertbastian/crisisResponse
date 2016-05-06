@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
+angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload','google.places','ngMaterialDatePicker'])
 
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/collection', {
@@ -29,11 +29,11 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
   $scope.selectCollection = function(collection){
     gloVars.setCollection(collection);
     $location.path("/selection");
-  }
+  };
 
   $scope.active = function(collection){
     return collection.id == gloVars.filter().collection;
-  }
+  };
 
 
   $scope.delete = function(ev,collection) {
@@ -59,18 +59,88 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload'])
     }).then(function success(response) {
       $scope.import_ = null;
 
-      var update = function(){
-        loadCollections().then(function(){
-          var newCollection = $scope.collections.filter(function(e,i){return e.id === response.data})
-          if (newCollection.length > 0 && newCollection[0].status < 4)
-            $timeout(update,5000)
-        })
-      };
-      update();
+      updateCollections();
 
     }, function error(e){
       alert(e);
     });
+  };
+
+  function updateCollections(){
+    loadCollections().then(function(){
+      if($scope.collections.filter(function(e,i){return e.status < 2}).length > 0)
+        $timeout(updateCollections,1000)
+    })
   }
 
+  $scope.trends = {
+    load: function(woeid){
+      if (woeid != null)
+        $http.get('/api/trending/'+woeid).then(function(response){
+          $scope.trends.values = response.data;
+        })
+    },
+    locations: [{name: "Worldwide", woeid: 1}],
+    filtered: function(){
+      if ($scope.trends.searchText && $scope.trends.searchText.length > 2)
+        return $scope.trends.locations.filter(function(e){
+          return e.name.toLowerCase().startsWith($scope.trends.searchText.toLowerCase())}
+        );
+      else
+        return $scope.trends.locations;
+    },
+    values: []
+  };
+
+  $http.get('/api/trending/options').then(function(response){
+    $scope.trends.locations = response.data
+  });
+  $scope.trends.load(1);
+
+
+  $scope.streamtags = [];
+  $scope.stream = {
+    active: false,
+    name: null,
+    time: null,
+    count: 0,
+    location: null,
+    start: function() {
+      var config = {
+        name: $scope.stream.name,
+        query: $scope.streamtags,
+        lat: $scope.stream.location.geometry.location.lat(),
+        lon: $scope.stream.location.geometry.location.lng(),
+        time: moment($scope.stream.time).unix()
+      }
+      $http.post('/api/stream/start',config).then(function(){
+        $scope.stream.active = true;
+        setTimeout(loadCollections,500);
+        setTimeout($scope.stream.loadCount,500);
+      })
+    },
+    stop: function(){
+      $http.post("/api/stream/end").then(function(response){
+        $scope.stream.active = false;
+        $scope.stream.name = null;
+        $scope.stream.time = null;
+        $scope.stream.location = null;
+        $scope.streamtags = [];
+        setTimeout(updateCollections, 500);
+      })
+    },
+    ready: function(){
+      return $scope.stream.name != null && $scope.stream.name != "" &&
+             $scope.streamtags.length > 0 &&
+             $scope.stream.time != null && $scope.stream.time != "" &&
+             $scope.stream.location && typeof $scope.stream.location === 'object' && "geometry" in $scope.stream.location
+    },
+    loadCount: function(){
+      $http.get('/api/stream/status').then(function(response){
+        $scope.stream.count = response.data.count;
+        if ($scope.stream.active)
+          setTimeout($scope.stream.loadCount,500)
+      })
+    }
+  };
 });

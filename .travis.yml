@@ -1,19 +1,11 @@
 language: scala
 scala:
 - 2.11.7
+
 jdk:
 - oraclejdk8
-
-notifications:
-  email: false
 
 cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
-
-deploy:
-  provider: heroku
-  app: crisis-response-system
-  api_key:
-    secure: "BOPAdr3cr0929+9pAjJZt37Lb7d6+JY62fMGBchIQq8WwANia1mxJKkqBsGegqmI9IjdIzva2NuFOoEMt5II9zwH/SeV5eepKINbiySLd6pBdKsKumBOz/6iLv4zQSmWLO8+PkYJMWAIUF5nKZ2AomJW5aIQ7LOxi20t7HMHspcou4vkZ495MKpJ0SnmVF56bJdMpoPMuIaWtRLfaeyfsn1JtWKD0SN3CYyQd085b/iM2eRboQy9PHdpnPqT+FC/qBfguB7rCk0kGENmGBVFFqHa0owvVJT0+6ufTvqzZT4euccjIHl1ubAnHAdbVq4XKDljEj4XE/isTlfZllhouaT5T6FuGtUwCYy2SGNLU6tb/nsLHNLARDct4bkZaAguYNj4Lx5nk9rJgkRunflV8l4k7/kwgoB9DAAiO/wisDBDjrs5LjR02O0DAMzBqocZ2BoDjLwI0b8GjsMCCFuCt9XYUwExPnaT5k+CjMgYRpGPSXPxxithphmR71GJ4V0i5asadrImmTAdeg+yh6lsqn4Kt5uX+VQceUkUwzIK7VZ2VNo/uQ7qanM0AaBO8VYC3ksd3MJ1EUwo3WWO5/Ucwvsogy/nLPt8p177Bjh3j0tNF+OvgZJFcoCjIUv9GpffxqT7sG2idS0U/Y+eipT2wahUiiT+JejgsfEt1lP9JNo="

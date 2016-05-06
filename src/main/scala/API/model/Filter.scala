@@ -4,11 +4,12 @@ import java.sql.Timestamp
 
 case class Filter(
                    collection: Long,
-                   time: Option[Seq[Double]] = None,
+                   // Unix MINUTES
+                   time: Option[Seq[Long]] = None,
                    sentiment: Option[Seq[Double]] = None,
                    popularity: Option[Seq[Double]] = None,
                    corroboration: Option[Seq[Double]] = None,
                    competence: Option[Seq[Double]] = None,
-                   hasLocation: Boolean = false,
+                   locationBehaviour: Option[String] = None,
                    noRetweets: Boolean = false
                  )

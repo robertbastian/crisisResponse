@@ -8,9 +8,10 @@ case class Tweet (
    author: String,
    time: Timestamp,
    collection: Long,
-   location: Option[Array[Double]] = None,
-   sentiment: Option[Double] = None,
-   recency: Option[Double] = None,
-   corroboration: Option[Double] = None,
-   proximity: Option[Double] = None
+   latitude: Option[Double],
+   longitude: Option[Double],
+   sentiment: Double,
+   recency: Double,
+   corroboration: Double,
+   proximity: Double
 )

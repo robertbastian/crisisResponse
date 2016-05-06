@@ -10,48 +10,39 @@ angular.module('crisisResponse.selection', ['ngRoute'])
   }])
 
   .controller('SelectionController', function($scope, gloVars, $location,$http) {
+
+    $scope.goAnalyze = function(){
+      $location.path('/analysis')
+    };
+
+    var HISTOGRAMS = [
+      {selector: "sentiment",buckets: 10, color: "cyan"},
+      {selector: "corroboration", buckets: 10, color: "cyan"},
+      {selector: "competence", buckets: 10, color: "cyan"},
+      {selector: "popularity", buckets: 10, color: "cyan"},
+      {selector: "time", buckets: 0, color: "cyan"}
+    ];
+
     $scope.filter = gloVars.filter();
-    $scope.collection = gloVars.collectionDetails();
-    $scope.count = {};
+    $scope.count = {selected: "?", all: "?"};
 
     $scope.change = function(){
       $http.post("/api/count",$scope.filter).success(function(response){
         $scope.count = response;
-      })
+      });
+      HISTOGRAMS.forEach(function(o){
+        $http.post("/api/histogram/"+ o.selector + "/" + o.buckets,$scope.filter).then(function(response){
+            makeHistogram(o.selector,response.data.buckets, response.data.min, response.data.max, o.color)
+          },console.log);
+      });
     };
+
     $scope.change();
-
-
-    var histograms = [{
-      selector: "sentiment",
-      buckets: 5,
-      color: "cyan"
-    },{
-      selector: "corroboration",
-      buckets: 10,
-      color: "cyan"
-    },{
-      selector: "competence",
-      buckets: 10,
-      color: "cyan"
-    },{
-      selector: "popularity",
-      buckets: 10,
-      color: "cyan"
-    },{
-      selector: "time",
-      buckets: 20,
-      color: "cyan"
-    }];
-
-    histograms.forEach(function(o){
-      $http.post("/api/histogram/"+ o.selector + "/" + o.buckets,$scope.filter).success(function(response){
-        makeHistogram(o.selector,response.buckets, response.min, response.max, o.color)
-      })
-    });
 
     function makeHistogram(selector,data,minX,maxX,color) {
       var obj = $('#'+selector);
+
+      obj.empty();
 
       var barPadding = 1,
         w = obj.width(),
@@ -63,7 +54,13 @@ angular.module('crisisResponse.selection', ['ngRoute'])
         .attr("width", w)
         .attr("height", h);
 
-      var x = d3.scale.linear().domain([minX,maxX]).range([20,w-20]);
+      var x = d3.scale.linear().domain([Math.floor(minX),Math.ceil(maxX)]).range([20,w-20]);
+
+      var xAxis = d3.svg.axis()
+        .orient("bottom")
+        .scale(x)
+        .ticks(2)
+        .tickFormat(d3.format("d"));
 
       svg.selectAll("rect")
         .data(data)
@@ -76,16 +73,16 @@ angular.module('crisisResponse.selection', ['ngRoute'])
         .attr("fill", color);
 
       var brush = d3.svg.brush().x(x);
+      if ($scope.filter[selector] != null)
+        brush.extent($scope.filter[selector]);
 
       brush
-        .on("brushend", function() {
-          $scope.filter[selector] = brush.empty() ? null : brush.extent();
-          $scope.change();
-        })
         .on("brush", function(){
           var extent = brush.extent().map(Math.round);
           d3.select(this).call(extent[0] == extent[1] ? brush.clear() : brush.extent(extent));
-      });
+          $scope.filter[selector] = brush.empty() ? null : extent;
+        })
+        .on("brushend", $scope.change);
 
       var brushg = svg.append("g")
         .attr("class", "brush")
@@ -103,5 +100,5 @@ angular.module('crisisResponse.selection', ['ngRoute'])
 
       brushg.selectAll("rect")
         .attr("height", h);
-    }
+    };;;
   });

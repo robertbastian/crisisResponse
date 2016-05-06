@@ -60,7 +60,7 @@ angular.module('crisisResponse', [
         competence: null,
         popularity: null,
         corroboration: null,
-        hasLocation: false,
+        locationBehaviour: "fromUser",
         noRetweets: true
       };
       collectionDetails = collection;

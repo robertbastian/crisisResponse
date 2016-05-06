@@ -1,46 +1,36 @@
 package API.controller
 
-import java.io.{InputStream, StringReader}
-import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Date
+import API.database._
+import API.metrics.{TweetMetrics, Helpers, UserMetrics}
+import twitter4j.{Status, User}
+import API.stuff.LoggableFuture._
 
-import API.data._
-import API.model.{Tweet, User}
-import com.github.marklister.collections.io._
-
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.io.Source
-import scala.language.postfixOps
 
-object ImportController {
+class ImportController(name: String, lon: Double, lat: Double, time: Long, query: Option[String]) {
 
-  // Dates, format 08/04/2015 13:41
-  private val smd = new SimpleDateFormat("dd/MM/yy HH:mm")
-  private implicit val ymd = new GeneralConverter[Date](smd.parse)
+  val collection = CollectionDao.create(name,lon,lat,time,query)
 
-  case class ImportFormat(text: String, author: String, time: Date, latitude: Double, longitude: Double)
+  protected def analyze(tweets: Iterable[Status]): Future[Unit] = collection flatMap {collection =>
+    CollectionDao.step(collection)
 
-  def apply(input: InputStream, collection: Long): Option[Future[Option[Int]]] =
-    try {
-      val raw = CsvParser(ImportFormat).parse(
-        new StringReader(
-          Source.fromInputStream(input).getLines().mkString("\n")),
-        hasHeader = true
-      )
-      Some(TweetDao.create(
-        raw.filter(_.text.nonEmpty)
-        .map(i => Tweet(
-          None,
-          i.text,
-          i.author.toLowerCase,
-          new Timestamp(i.time.getTime),
-          collection,
-          if (i.longitude == 0 && i.latitude == 0) None else Some(Array(i.longitude, i.latitude))
-        ))
-      ))
-    }
-    catch {
-      case e: Throwable => println(e); None
-    }
+    val users = tweets.map(_.getUser).filterNot(_ == null).toSet
+
+    val wordcounts = new mutable.HashSet[(String,String,Long)]
+    val userinteraction = new mutable.HashSet[(String,String,Long)]
+    val tweetMetrics = new TweetMetrics(collection,wordcounts,userinteraction)
+    val userMetrics = new UserMetrics
+
+    val analyzing = for {
+      users <- userMetrics.process(users) thenLog s"Analysed users"
+      _ <- UserDao.save(users.values) thenLog s"Stored users"
+      tweets <- tweetMetrics.process(tweets, users) thenLog s"Analysed ${tweets.size} tweets"
+      _ <- TweetDao.create(tweets) flatMap {_ => for (_ <- WordsDao.save(wordcounts);_ <- InteractionDao.save(userinteraction)) yield ()} thenLog s"Stored tweets, words and interactions"
+    } yield ()
+
+    analyzing map { case () => CollectionDao.step(collection); println(s"Done analysing collection $collection")
+    } recover { case e: Throwable => CollectionDao.delete(collection); e.printStackTrace(); println(s"Failure analysing collection $collection...deleting")}
+  }
 }

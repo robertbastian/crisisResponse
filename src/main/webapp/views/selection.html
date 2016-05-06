@@ -10,19 +10,17 @@
         shape-rendering: crispEdges;
     }
 </style>
-<div layout="row" flex-offset="5">
-    <md-card flex="40" flex-offset="30">
-        <md-card-content>
-            <p class="md-headline" style="text-align: center">{{count.selected}}/{{count.all}} tweets selected</p>
-        </md-card-content>
-    </md-card>
-</div>
 <div layout="row">
     <div layout="column" flex="30" flex-offset="5">
-        <md-card style="height:217px">
+        <md-card >
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Corroboration</span>
+                    <span class="md-subhead">{{filter.corroboration ? filter.corroboration[0] + " to " + filter.corroboration[1] : "All"}}</span>
+                </md-card-header-text>
+            </md-card-header>
             <md-card-content>
-                <md-checkbox ng-model="filter.noRetweets" ng-change="change()">No retweets</md-checkbox><br>
-                <md-checkbox ng-model="filter.hasLocation" ng-change="change()">Geotagged only</md-checkbox>
+                <div id="corroboration" class="histogram"></div>
             </md-card-content>
         </md-card>
     </div>
@@ -44,7 +42,8 @@
             <md-card-header>
                 <md-card-header-text>
                     <span class="md-title">Time</span>
-                    <span class="md-subhead">{{filter.time ? (filter.time[0]*1000 | date:"MM/dd/yyyy, h:mma") + " to " + (filter.time[1]*1000 | date:"MM/dd/yyyy, h:mma") : "All"}}</span>
+                    <span class="md-subhead">{{filter.time ? (filter.time[0]) + " to " + (filter.time[1]) : "All"}}</span>
+                    <!--*60000 | date:"MM/dd/yyyy, h:mma"-->
                 </md-card-header-text>
             </md-card-header>
             <md-card-content>
@@ -58,25 +57,25 @@
         <md-card >
             <md-card-header>
                 <md-card-header-text>
-                    <span class="md-title">Corroboration</span>
-                    <span class="md-subhead">{{filter.sentiment ? filter.corroboration[0] + " to " + filter.corroboration[1] : "All"}}</span>
-                </md-card-header-text>
-            </md-card-header>
-            <md-card-content>
-                <div id="corroboration" class="histogram"></div>
-            </md-card-content>
-        </md-card>
-    </div>
-    <div layout="column" flex="30">
-        <md-card >
-            <md-card-header>
-                <md-card-header-text>
                     <span class="md-title">Competence</span>
-                    <span class="md-subhead">{{filter.sentiment ? filter.competence[0] + " to " + filter.competence[1] : "All"}}</span>
+                    <span class="md-subhead">{{filter.competence ? filter.competence[0] + " to " + filter.competence[1] : "All"}}</span>
                 </md-card-header-text>
             </md-card-header>
             <md-card-content>
                 <div id="competence" class="histogram"></div>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="column" flex="30">
+        <md-card style="height:217px">
+            <md-card-content>
+                <p style="margin-bottom:5px">Locationless tweets:</p>
+                <md-radio-group ng-model="filter.locationBehaviour" ng-change="change()">
+                    <md-radio-button ng-value="'exclude'">Exclude</md-radio-button>
+                    <md-radio-button ng-value="null">Do nothing</md-radio-button>
+                    <md-radio-button ng-value="'fromUser'">Approximate from user</md-radio-button>
+                </md-radio-group>
+                <md-checkbox ng-model="filter.noRetweets" ng-change="change()">Exclude retweets</md-checkbox>
             </md-card-content>
         </md-card>
     </div>
@@ -94,4 +93,11 @@
         </md-card>
     </div>
 </div>
-{{filter}}
+<div layout="row">
+    <md-card flex="20" flex-offset="40">
+        <md-card-content style="text-align:center">
+            <p class="md-headline" style="text-align: center">{{count.selected}}/{{count.all}} tweets selected</p>
+            <md-button class="md-primary md-raised" ng-click="goAnalyze()">Analyze</md-button>
+        </md-card-content>
+    </md-card>
+</div>

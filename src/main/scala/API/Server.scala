@@ -1,16 +1,18 @@
 package API
 
-import API.controller.{AnalyticsController, ImportController}
-import API.data.WordsDao.Word
-import API.data._
+import java.io.FileInputStream
+
+import API.controller.{FileImportController, StreamImportController}
+import API.database.WordsDao.Word
+import API.database._
 import API.model.{Collection, Filter}
+import API.remotes.Twitter
+import API.stuff.StreamConfig
+import org.json4s.JsonDSL._
 import org.json4s._
 import org.scalatra._
 import org.scalatra.json._
 import org.scalatra.servlet.{FileUploadSupport, MultipartConfig, SizeConstraintExceededException}
-import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{implicitConversions, postfixOps}
@@ -24,12 +26,12 @@ class Server extends ScalatraServlet
 
   error {
     case _: SizeConstraintExceededException => RequestEntityTooLarge("10MB limit")
-    case e: Throwable => println(e.getMessage()); InternalServerError("Server error")
+    case e: Throwable => println(e.getMessage); InternalServerError("Server error")
   }
 
   get("/tweet/:id") {
     async {
-      TweetDao.get(params("id").toInt) map {
+      TweetDao.get(params("id").toLong) map {
         case Some(t) => UserDao.get(t.author) map {
           case Some(u) => Ok(Seq(t,u))
           case None => InternalServerError("DB inconsistent")
@@ -65,19 +67,14 @@ class Server extends ScalatraServlet
 
   delete("/collection/:id") {
     async {
-      CollectionDao.delete(params("id").toInt) map { _ => Ok(true) }
+      CollectionDao.delete(Collection(Some(params("id").toLong),null,0,0,0,0,null)) map { _ => Ok(true) }
     }
   }
 
   post("/collection/:name"){
-    val input = fileParams("file").getInputStream
     async {
-      CollectionDao.create(params("name")) map { collection =>
-        ImportController(input, collection) match {
-          case None => CollectionDao.delete(collection); BadRequest("Bad csv")
-          case Some(f) => for { _ <- f; _ <- AnalyticsController(collection)} yield Unit; Created(collection)
-        }
-      }
+      val i = new FileImportController(params("name"), fileParams("file").getInputStream)
+      i.collection map {Created(_)}
     }
   }
 
@@ -94,14 +91,13 @@ class Server extends ScalatraServlet
   post("/histogram/:selector/:buckets"){
     async {
       val filter = parsedBody.extract[Filter]
-      val x = params("selector") match {
-        case "time" => TweetDao.histogramT(filter, params("selector"), params("buckets").toInt)
+      (params("selector") match {
+        case "time" => TweetDao.histogramT(filter)
         case _ => TweetDao.histogram(filter, params("selector"), params("buckets").toInt)
-      }
-      x map { case (min, max, buckets) =>
+      }) map { case (min, max, buckets) =>
         ("min", min) ~
-          ("max", max) ~
-          ("buckets", buckets)
+        ("max", max) ~
+        ("buckets", buckets)
       }
     }
   }
@@ -110,7 +106,7 @@ class Server extends ScalatraServlet
     async {
       val filter = parsedBody.extract[Filter]
       TweetDao.locations(filter).map(_.map(r =>
-          ("id" -> r._1) ~
+          ("id" -> r._1.toString) ~ // Best way in JS to represent 53-bits or more -.-
           ("location" -> List(r._2,r._3))
       ))
     }
@@ -119,12 +115,12 @@ class Server extends ScalatraServlet
   post("/wordcounts"){
     async {
       val filter = parsedBody.extract[Filter]
-      WordsDao.getAll(filter) map {case (hashtags,users,words) =>
-        def transform(w: Word) = ("text" -> w.text) ~ ("weight" -> w.weight) ~ ("html" -> ("class" -> w.kind) ~ ("sentiment" -> w.sentiment))
-
+      WordsDao.getAll(filter) map {case Seq(hashtags,names,urls,rest) =>
+        def transform(w: Word) = ("text" -> w.text) ~ ("weight" -> w.weight) ~ ("type" -> w.kind) ~ ("sentiments" -> w.sentiments) ~ ("trustworthinesses" -> w.trustworthinesses)
         ("hashtags" -> hashtags.map(transform)) ~
-        ("users" -> users.map(transform)) ~
-        ("words" -> words.map(transform))
+        ("names" -> names.map(transform)) ~
+        ("urls" -> urls.map(transform)) ~
+        ("words" -> rest.map(transform))
       }
     }
   }
@@ -153,6 +149,48 @@ class Server extends ScalatraServlet
         tweets.partition(_.author == u)
       }
     }
+  }
+
+  get("/initM"){
+    async {
+      val i = new FileImportController("Medium", new FileInputStream("resources/medium.csv"))
+      i.collection map {Created(_)}
+    }
+  }
+
+  get("/initS"){
+    async {
+      val i = new FileImportController("Small", new FileInputStream("resources/short.csv"))
+      i.collection map {Created(_)}
+    }
+  }
+
+  get("/trending/options"){
+  }
+
+  get("/trending/:woeid"){
+    params("woeid") match  {
+      case "options" => Twitter.trendingOptions() map {e => ("name", e._1) ~ ("woeid", e._2)}
+      case woeid: String => Twitter.trending(woeid.toInt)
+    }
+  }
+
+
+  post("/stream/start") {
+    val config = parsedBody.extract[StreamConfig]
+    new StreamImportController(config.name, config.query, config.lon, config.lat, config.time)
+    true
+  }
+
+  get("/stream/status"){
+    async{
+      StreamImportController.active map { ("count",_) }
+    }
+  }
+
+  post("/stream/end"){
+    StreamImportController.finish()
+    true
   }
 
   // JSON config

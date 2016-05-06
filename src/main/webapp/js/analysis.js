@@ -4,7 +4,8 @@ angular.module('crisisResponse.analysis', [
   'ngRoute',
   'ngMap',
   'chart.js',
-  'angular-jqcloud'
+  'angular-jqcloud',
+  'ngSanitize'
 ])
 
 .config(['$routeProvider', function($routeProvider) {
@@ -14,7 +15,7 @@ angular.module('crisisResponse.analysis', [
   });
 }])
 
-.controller('AnalysisController', function($scope,$http,gloVars,$location,NgMap) {
+.controller('AnalysisController', function($scope,$http,gloVars,$location,NgMap,$sanitize) {
 
   $scope.view = "map";
   $scope.mapmode = "clustered";
@@ -35,7 +36,7 @@ angular.module('crisisResponse.analysis', [
   };
 
   $scope.viewChange = function(){
-    $scope.selected.tweet = null
+    $scope.selected.tweet = null;
     if (!loaded[$scope.view]){
       if ($scope.view == "map") {
         initMap();
@@ -47,6 +48,7 @@ angular.module('crisisResponse.analysis', [
         initGraph();
       }
     }
+    setTimeout(resizeMap,100)
   };
 
   $scope.init = $scope.viewChange();
@@ -93,11 +95,17 @@ angular.module('crisisResponse.analysis', [
     loaded.map = true;
   }
 
+  function resizeMap(){
+    NgMap.getMap().then(function(map){
+      google.maps.event.trigger(map,'resize')
+    })
+  }
+
   $scope.changeMapView = function(){
     NgMap.getMap().then(function(map) {
-      mapdata.cluster.clearMarkers();
-      if ($scope.mapmode === "clustered")
-        mapdata.cluster.addMarkers(mapdata.markers)
+      mapdata.markers.forEach(function(marker){
+        marker.setMap($scope.mapmode === "simple" ? map : null)
+      });
       mapdata.cluster.setMap($scope.mapmode === "clustered" ? map : null);
       mapdata.heatmap.setMap($scope.mapmode === "heatmap" ? map : null);
     });
@@ -105,13 +113,41 @@ angular.module('crisisResponse.analysis', [
 
   function initWordclouds(){
     $http.post("/api/wordcounts",gloVars.filter()).then(function (response){
-      $.each(['hashtags','users','words'],function(i,type){
+      function withGradient(entry){
+        return {
+          text: entry.text,
+          weight: entry.weight,
+          html: {
+            "style-sentiment": gradient(entry.sentiments[0],entry.sentiments[1]),
+            "style": gradient(entry.trustworthinesses[0],entry.trustworthinesses[1])
+          }
+        }
+      }
+      function gradient(red, green){
+        return "background: -webkit-linear-gradient(left, #FF6961, " +
+          "#FF6961 "+(red*100)+"%, " +
+          "#FDFD96 "+(red*100)+"%, " +
+          "#FDFD96 "+((1-green)*100)+"%, " +
+          "#77DD77 "+((1-green)*100)+"%, " +
+          "#77DD77 100%);"
+      }
+      function withLink(entry){
+        var stripped = entry.text.replace(/https*\:\/\/(www.)*/g,'');
+        return {
+          text: stripped.length > 20 ? stripped.substr(0,17) + '...' : stripped,
+          weight: entry.weight,
+          link: entry.text
+        }
+      }
+
+      $.each(['hashtags','names','words','urls'],function(i,type){
+        var processed = response.data[type].map(type == 'urls' ? withLink : withGradient);
         var object = $("#wordcloud-"+type);
-        object.jQCloud(response.data[type],{height: object.parent().height(),width: object.parent().width()});
+        object.jQCloud(processed,{height: object.parent().height(),width: object.parent().width()});
       });
-      $('#wordcloud-words').find('span[sentiment]').each(function(i,o) {
-        $(o).css("color", "hsl(" + (30 + 20 * $(o).attr("sentiment")) + ", 100%, 25%)")
-      })
+      //$('#wordcloud-words').find('span[sentiment]').each(function(i,o) {
+      //  $(o).css("color", "hsl(" + (30 + 20 * $(o).attr("sentiment")) + ", 100%, 25%)")
+      //})
     });
     loaded.wordcloud = true;
   }
@@ -120,7 +156,7 @@ angular.module('crisisResponse.analysis', [
     $http.post("/api/interactions",gloVars.filter()).then(function (response){
 
       //noinspection JSJQueryEfficiency
-      var width = $("#sng").parent().width(), height = $("#sng").parent().height();
+      var width = $("ng-map").parent().parent().parent().width() - 16, height = $("ng-map").parent().parent().parent().height()-16;
       var color = d3.scale.category20();
 
       var force = d3.layout.force()
@@ -146,7 +182,7 @@ angular.module('crisisResponse.analysis', [
         .enter().append("g")
         .on("click",function(){
           $scope.selected.user = $(d3.select(this)[0]).find("text").html().toLowerCase();
-          $scope.selected.tweets = []
+          $scope.selected.tweets = [];
           $http.post("/api/interactions/"+$scope.selected.user,gloVars.filter()).then(function(response){
             $scope.selected.tweets = response.data
           });

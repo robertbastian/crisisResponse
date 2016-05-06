@@ -12,12 +12,18 @@
                 <div flex id="wordcloud-hashtags"></div>
             </md-card>
             <md-card flex="50" style="position: relative;">
-                <div flex id="wordcloud-users"></div>
+                <div flex id="wordcloud-words"></div>
             </md-card>
         </div>
-        <md-card flex="50" style="position: relative;" ng-show="view == 'wordcloud'">
-            <div flex id="wordcloud-words"></div>
-        </md-card>
+        <div layout="row" flex="50" ng-show="view == 'wordcloud'">
+            <md-card flex="50" style="position: relative;">
+                <div flex id="wordcloud-names"></div>
+            </md-card>
+            <md-card flex="50" style="position: relative;">
+                <div flex id="wordcloud-urls"></div>
+            </md-card>
+        </div>
+
 
         <md-card flex="100" style="position: relative;" ng-show="view == 'sng'">
             <md-card-content id="sng"></md-card-content>
@@ -47,20 +53,21 @@
             </md-card-header>
             <md-card-content>
                  <md-radio-group ng-model="mapmode" ng-change="changeMapView()">
-                     <md-radio-button value="clustered" class="md-primary">Clustered</md-radio-button>
+                     <md-radio-button value="simple" class="md-primary">Simple</md-radio-button>
+                     <md-radio-button value="clustered">Clustered</md-radio-button>
                      <md-radio-button value="heatmap">Heatmap</md-radio-button>
                  </md-radio-group>
             </md-card-content>
         </md-card>
 
-        <md-card ng-show="view == 'map' && mapmode == 'clustered'">
+        <md-card ng-show="view == 'map' && mapmode != 'heatmap'">
             <md-card-header>
                 <md-card-header-text>
                     <span class="md-title">Tweet Details</span>
                 </md-card-header-text>
             </md-card-header>
             <md-card-content ng-show="selected.tweet">
-                <p class="md-block-1">{{selected.tweet.text}}</p>
+                <p class="md-block-1" ng-bind-html="selected.tweet.text | linky:'_blank'"></p>
                 <p class="md-caption">@{{selected.tweet.author.name}}, {{selected.tweet.time | date: 'dd/MM/yyyy hh:mm'}}</p>
                 <canvas class="chart chart-radar" chart-data="selected.graph.data" chart-labels='selected.graph.labels'>
                 </canvas>

@@ -31,3 +31,18 @@ text {
     font: 10px sans-serif;
     pointer-events: none;
 }
+
+div.jqcloud span {
+    color: transparent !important;
+    -webkit-background-clip: text !important;
+    background-clip: text;
+    font-weight: bold;
+}
+
+[id^=wordcloud] {
+    background: #d7d7d7;
+}
+
+div.jqcloud a {
+    color: #42A5F5;
+}

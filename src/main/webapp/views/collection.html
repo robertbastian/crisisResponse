@@ -1,54 +1,104 @@
-<div layout="row">
+<div layout="row" layout-fill>
+<div layout="column" flex="50">
+    <div layout="row">
+        <md-card flex>
+            <md-card-title class="md-headline">Select a collection</md-card-title>
+            <md-card-content>
+                <md-progress-circular md-mode="indeterminate" ng-hide="collections.length > 0"></md-progress-circular>
 
+                <md-list ng-show="collections.length > 0">
+                    <md-list-item ng-repeat="collection in collections" ng-click="selectCollection(collection)" class="md-2-line" ng-disabled="collection.status < 2">
+                        <div class="md-list-item-text">
+                            <h3>{{ collection.name }}</h3>
+                            <p>{{["Collecting","Processing","Ready"][collection.status]}}</p>
+                        </div>
+                        <md-icon ng-click="delete($event,collection)" aria-label="Delete collection" class="md-secondary md-hue-3 material-icons md-warn">delete</md-icon>
+                    </md-list-item>
+                </md-list>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="row">
+        <md-card flex>
+            <md-card-title class="md-headline">Import CSV</md-card-title>
+            <md-card-content>
+                <form name="import" ng-submit="upload()">
+                    <md-input-container>
+                        <label>Collection name</label>
+                        <input ng-model="import_.name" type="text"/>
+                    </md-input-container>
+                        <md-button class="md-primary md-raised">
+                            <label for="fileInput">Select .csv</label>
+                        </md-button>
+                    <md-input-container>
+                        <input id="fileInput" name="file" type="file" class="ng-hide" accept="text/csv" ngf-select  ng-model='import_.file'>
+                        {{import_.file ? import_.file.name : ""}}
+                    </md-input-container>
+                    <md-input-container class="md-block" flex-gt-xs>
+                        <input type="submit" value='Process' class="md-primary md-button md-raised"/>
+                    </md-input-container>
 
-    <md-card flex="50" flex-offset="25">
-        <md-card-title class="md-headline">Select a collection</md-card-title>
-        <md-card-content>
-            <md-progress-circular md-mode="indeterminate" ng-hide="collections.length > 0"></md-progress-circular>
-
-            <md-list ng-show="collections.length > 0">
-                <md-list-item ng-repeat="collection in collections" ng-click="selectCollection(collection)" class="md-2-line" ng-disabled="collection.status < 4">
-                    <!--<img alt="{{ person.name }}" ng-src="{{ person.img }}" class="md-avatar" />-->
-                    <div class="md-list-item-text">
-                        <h3>{{ collection.name }}</h3>
-                        <p>{{collection.status == 4 ? "Ready" : "...".repeat(collection.status+1)}}</p>
-                    </div>
-                    <md-icon ng-click="delete($event,collection)" aria-label="Delete collection" class="md-secondary md-hue-3 material-icons md-warn">delete</md-icon>
-                </md-list-item>
-            </md-list>
-        </md-card-content>
-    </md-card>
-
+                </form>
+            </md-card-content>
+        </md-card>
+    </div>
 </div>
-<div layout="row">
-
-    <md-card flex="50">
-        <md-card-title class="md-headline">Import CSV</md-card-title>
-        <md-card-content>
-            <form name="import" ng-submit="upload()">
+<div layout="column" flex='50'>
+    <div layout="row">
+        <md-card flex>
+            <md-card-title class="md-headline">Collect in real-time</md-card-title>
+            <md-card-content>
+                <md-chips ng-model="streamtags" readonly="stream.active" placeholder="Search tags"></md-chips>
                 <md-input-container>
                     <label>Collection name</label>
-                    <input ng-model="import_.name" type="text"/>
+                    <input ng-model="stream.name" type="text"/>
                 </md-input-container>
-                    <md-button class="md-primary md-raised">
-                        <label for="fileInput">Select .csv</label>
-                    </md-button>
                 <md-input-container>
-                    <input id="fileInput" name="file" type="file" class="ng-hide" accept="text/csv" ngf-select  ng-model='import_.file'>
-                    {{import_.file ? import_.file.name : ""}}
+                    <label>Reference time</label>
+                    <input mdc-datetime-picker date="true" time="true" type="text" short-time="false"
+                           placeholder="Reference time"
+                           format="DD/MM/YY HH:mm "
+                           ng-model="stream.time">
                 </md-input-container>
-                <md-input-container class="md-block" flex-gt-xs>
-                    <input type="submit" value='Process' class="md-primary md-button md-raised"/>
+                <md-input-container>
+                    <label>Reference location</label>
+                    <input ng-model="stream.location" g-places-autocomplete type="text"/>
                 </md-input-container>
-
-            </form>
-        </md-card-content>
-    </md-card>
-
-    <md-card flex="50">
-        <md-card-title class="md-headline">Collect in real-time</md-card-title>
+                <md-button class="md-primary md-raised md-block" ng-click="stream.start()" ng-disabled="!stream.ready()" ng-hide="stream.active">
+                    <label>Start collecting</label>
+                </md-button>
+                <md-button class="md-primary md-raised" ng-click="stream.stop()" ng-show="stream.active">
+                    <label>Finish collecting</label>
+                </md-button>
+                <span ng-show="stream.active">{{stream.count}} Tweets collected</span>
+                <md-progress-circular md-mode="indeterminate" ng-show="stream.active"></md-progress-circular>
+            </md-card-content>
+        </md-card>
+    </div>
+    <div layout="row">
+    <md-card flex>
+        <md-card-title class="md-headline">Trends</md-card-title>
         <md-card-content>
+            <md-autocomplete
+                    md-selected-item-change="trends.load(item ? item.woeid : null)"
+                    md-items="item in trends.filtered()"
+                    md-item-text="item.name"
+                    md-search-text="trends.searchText"
+                    md-min-length="0"
+                    placeholder="Select location...">
+                <md-item-template>
+                    <span md-highlight-text="trends.searchText" md-highlight-flags="^i">{{item.name}}</span>
+                </md-item-template>
+                <md-not-found>
+                    No regions matching
+                </md-not-found>
+            </md-autocomplete>
+            <ul>
+                <li style="display: inline-block; padding: 5px 10px" ng-repeat="trend in trends.values">{{trend}}</li>
+            </ul>
 
         </md-card-content>
     </md-card>
+    </div>
+</div>
 </div>
