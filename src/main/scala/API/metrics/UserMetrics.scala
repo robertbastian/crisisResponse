@@ -14,7 +14,12 @@ class UserMetrics {
     def competence(user: User): Double = {
       if (isNewsAgency(user))
         10.0
-      else 5.0
+      else if (isJournalist(user) && referencesNewsAgency(user) && user.isVerified)
+        7.5
+      else if (user.isVerified || (isJournalist(user) && referencesNewsAgency(user)))
+        5.0
+      else
+        2.5
     }
 
     def popularity(user: User): Double = {

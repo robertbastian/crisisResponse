@@ -23,7 +23,6 @@ class TweetMetrics(collection: Collection, wordcounts: mutable.HashSet[(String,S
     val corroboration = {
       try {
         val results = ControllerFactory.createSimple().process(tweets.map(tweet => new Document(tweet.getText, null, tweet.getId.toString)).toList, collection.query.orNull, classOf[LingoClusteringAlgorithm])
-        println(results.getClusters)
         var biggestCluster = results.getClusters.map(_.size).reduce(Math.max)
         val map = (for {
           cluster <- results.getClusters
@@ -39,17 +38,17 @@ class TweetMetrics(collection: Collection, wordcounts: mutable.HashSet[(String,S
     def proximity(tweet: Status): Double = {
       if (tweet.getGeoLocation != null) {
         val d = distance(tweet.getGeoLocation.getLatitude,collection.lat,tweet.getGeoLocation.getLongitude,collection.lon)
-        inInterval(10 - Math.log(d)/20 / Math.log(3.51))
+        inInterval(10 - Math.log(d/20) / Math.log(3.51))
       }
       else users.get(tweet.getUser.getId) match {
         case Some(u) if u.latitude.isDefined =>
           val d = distance(u.latitude.get,collection.lat,u.longitude.get,collection.lon)
-          inInterval(10 - Math.log(d*4)/20 / Math.log(3.51))
+          inInterval(10 - Math.log(d/20) / Math.log(3.51))/2
         case _ => 0.0
       }
     }
 
-    def recency(tweet: Status): Double = inInterval(Math.log((tweet.getCreatedAt.getTime - collection.time) / 1000 / 60 / 86400)/ Math.log(0.3769))
+    def recency(tweet: Status): Double = inInterval(Math.log((tweet.getCreatedAt.getTime/1000 - collection.time) / (60*86400))/ Math.log(0.3769))
 
     val sentiment = {
       val map = tweets.map(tweet => tweet.getId -> wordAnalysis(tweet)).toMap

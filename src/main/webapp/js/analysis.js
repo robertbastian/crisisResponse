@@ -152,6 +152,7 @@ angular.module('crisisResponse.analysis', [
     loaded.wordcloud = true;
   }
 
+  // TODO node size relative to # of interactions
   function initGraph(){
     $http.post("/api/interactions",gloVars.filter()).then(function (response){
 

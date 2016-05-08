@@ -56,8 +56,8 @@ object Helpers {
 
   def inInterval(x: Double, lower: Int = 0, upper: Int = 10): Double = Math.min(10,Math.max(0,x))
 
-  def isNewsAgency(user: User): Boolean = nas.contains(user.getId)
-  private val nas = Set[Long](
+  def isNewsAgency(user: User): Boolean = newsAgencyIds.contains(user.getId)
+  private val newsAgencyIds = Set[Long](
     742143, // BBC World
     8839632, // NBC Nightly News
     428333, // CNN Breaking News
@@ -88,4 +88,14 @@ object Helpers {
     380285402, // Daily Mail
     42958829 // CBS Evening News
   )
+
+  private val newsAgencyMatcher = ".*(" + Set[String](
+    "BBC","CNN","FOX","ABC","MSNBC", "AP","CBC","Sky","Washington Post","Wall Street Journal","WSJ","Reuters","NBC","New York Times","NY Times", "TIME","Huffington Post","CBS","Daily Mail"
+  ).mkString("|") + ").*"
+  def referencesNewsAgency(user: User): Boolean = user.getDescription matches newsAgencyMatcher
+
+  private val journalismMatcher = ".*(" + Set[String](
+    "reporter","editor","journalist","correspondent","news presenter"
+  ).mkString("|") + ").*"
+  def isJournalist(user: User) = user.getDescription.toLowerCase matches journalismMatcher
 }
