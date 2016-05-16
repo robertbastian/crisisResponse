@@ -1,7 +1,7 @@
 package API.database
 
 import API.database.DatabaseConnection.db
-import API.model.{Tweet, Filter}
+import API.model.{User, Tweet, Filter}
 import API.stuff.LoggableFuture._
 import slick.driver.PostgresDriver.api._
 
@@ -22,12 +22,12 @@ object InteractionDao {
   def save(set: mutable.Set[(String,String,Long)]): Future[Option[Int]] =
     db run (interactions ++= set.map{case (s1: String,s2: String,l: Long) => (s1.toLowerCase,s2.toLowerCase,l)}) thenLog s"Stored ${set.size} interactions"
 
-  def getAll(f: Filter): Future[Seq[(String, String,Int)]] = db run
+  def getAll(f: Filter): Future[Seq[((String, Option[User]),(String, Option[User]), Int)]] = db run
     (for {
-      interaction <- interactions
+      ((interaction, from),to) <- (interactions joinLeft UserDao.users on (_.from === _.name)) joinLeft UserDao.users on(_._1.to === _.name)
       tweet <- TweetDao.filtered(f) if interaction.tweet === tweet.id
-    } yield interaction)
-    .groupBy(i => (i.from,i.to)).map{case ((from,to),a) => (from,to,a.length)}.result thenLog s"Getting interactions for $f"
+    } yield ((interaction.from,from), (interaction.to, to)))
+    .groupBy{x => x}.map{case ((from,to),a) => (from,to,a.length)}.result thenLog s"Getting interactions for $f"
 
   def getBy(s: String,f: Filter): Future[Seq[Tweet]] = db run (
     for {

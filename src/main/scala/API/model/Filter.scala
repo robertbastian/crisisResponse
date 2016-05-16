@@ -1,7 +1,5 @@
 package API.model
 
-import java.sql.Timestamp
-
 case class Filter(
                    collection: Long,
                    // Unix MINUTES

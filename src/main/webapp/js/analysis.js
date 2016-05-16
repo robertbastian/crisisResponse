@@ -112,42 +112,46 @@ angular.module('crisisResponse.analysis', [
   };
 
   function initWordclouds(){
+    $scope.wordcloudColoring = "sentiment";
     $http.post("/api/wordcounts",gloVars.filter()).then(function (response){
       function withGradient(entry){
         return {
           text: entry.text,
           weight: entry.weight,
           html: {
-            "style-sentiment": gradient(entry.sentiments[0],entry.sentiments[1]),
-            "style": gradient(entry.trustworthinesses[0],entry.trustworthinesses[1])
+            "data-sentiment": JSON.stringify(entry.sentiments),
+            "data-trustworthiness": JSON.stringify(entry.trustworthinesses)
           }
         }
       }
-      function gradient(red, green){
-        return "background: -webkit-linear-gradient(left, #FF6961, " +
-          "#FF6961 "+(red*100)+"%, " +
-          "#FDFD96 "+(red*100)+"%, " +
-          "#FDFD96 "+((1-green)*100)+"%, " +
-          "#77DD77 "+((1-green)*100)+"%, " +
-          "#77DD77 100%);"
+      $scope.setGradients = function(arg){
+        $('span[data-sentiment]').css("background", function(){
+          var limits = $(this).data($scope.wordcloudColoring);
+          return "-webkit-linear-gradient(left, #FF6961, " +
+            "#FF6961 "+(limits[0]*100)+"%, " +
+            "#FDFD96 "+(limits[0]*100)+"%, " +
+            "#FDFD96 "+((1-limits[1])*100)+"%, " +
+            "#77DD77 "+((1-limits[1])*100)+"%, " +
+            "#77DD77 100%)"
+        })
       }
       function withLink(entry){
         var stripped = entry.text.replace(/https*\:\/\/(www.)*/g,'');
         return {
           text: stripped.length > 20 ? stripped.substr(0,17) + '...' : stripped,
           weight: entry.weight,
-          link: entry.text
+          link: {href: entry.text, target: "_blank"}
         }
       }
-
       $.each(['hashtags','names','words','urls'],function(i,type){
         var processed = response.data[type].map(type == 'urls' ? withLink : withGradient);
         var object = $("#wordcloud-"+type);
-        object.jQCloud(processed,{height: object.parent().height(),width: object.parent().width()});
+        object.jQCloud(processed,{
+          height: object.parent().height(),
+          width: object.parent().width(),
+          afterCloudRender: $scope.setGradients
+        });
       });
-      //$('#wordcloud-words').find('span[sentiment]').each(function(i,o) {
-      //  $(o).css("color", "hsl(" + (30 + 20 * $(o).attr("sentiment")) + ", 100%, 25%)")
-      //})
     });
     loaded.wordcloud = true;
   }
@@ -158,7 +162,9 @@ angular.module('crisisResponse.analysis', [
 
       //noinspection JSJQueryEfficiency
       var width = $("ng-map").parent().parent().parent().width() - 16, height = $("ng-map").parent().parent().parent().height()-16;
-      var color = d3.scale.category20();
+      var color = d3.scale.linear()
+        .domain([-1, 0, 5, 10])
+        .range(["gray", "red", "yellow", "green"]);
 
       var force = d3.layout.force()
         .nodes(response.data.nodes)
@@ -192,7 +198,8 @@ angular.module('crisisResponse.analysis', [
         .call(force.drag);
 
       node.append("circle")
-        .attr("r", 8);
+        .attr("r", function(u) {return 5 + Math.ceil(u.popularity)})
+        .style("fill", function(u) { return color(u.competence); });
 
       node.append("text")
         .attr("x", 12)

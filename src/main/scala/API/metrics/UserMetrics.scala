@@ -16,7 +16,7 @@ class UserMetrics {
         10.0
       else if (isJournalist(user) && referencesNewsAgency(user) && user.isVerified)
         7.5
-      else if (user.isVerified || (isJournalist(user) && referencesNewsAgency(user)))
+      else if (user.isVerified || isJournalist(user) || referencesNewsAgency(user))
         5.0
       else
         2.5

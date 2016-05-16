@@ -92,10 +92,10 @@ object Helpers {
   private val newsAgencyMatcher = ".*(" + Set[String](
     "BBC","CNN","FOX","ABC","MSNBC", "AP","CBC","Sky","Washington Post","Wall Street Journal","WSJ","Reuters","NBC","New York Times","NY Times", "TIME","Huffington Post","CBS","Daily Mail"
   ).mkString("|") + ").*"
-  def referencesNewsAgency(user: User): Boolean = user.getDescription matches newsAgencyMatcher
+  def referencesNewsAgency(user: User): Boolean = Option(user.getDescription) map { _ matches newsAgencyMatcher} getOrElse(false)
 
   private val journalismMatcher = ".*(" + Set[String](
     "reporter","editor","journalist","correspondent","news presenter"
   ).mkString("|") + ").*"
-  def isJournalist(user: User) = user.getDescription.toLowerCase matches journalismMatcher
+  def isJournalist(user: User) = Option(user.getDescription) map { _.toLowerCase matches journalismMatcher} getOrElse(false)
 }

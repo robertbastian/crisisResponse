@@ -39,10 +39,15 @@ div.jqcloud span {
     font-weight: bold;
 }
 
-[id^=wordcloud] {
+div[id^=wordcloud] {
     background: #d7d7d7;
 }
-
+.wordcloudtitle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+}
 div.jqcloud a {
     color: #42A5F5;
 }

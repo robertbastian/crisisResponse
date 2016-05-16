@@ -41,14 +41,14 @@ class Server extends ScalatraServlet
     }
   }
 
-  get("/user/:name") {
-    async {
-      UserDao.get(params("name")) map {
-        case Some(u) => Ok(u)
-        case None    => NonExistent()
-      }
-    }
-  }
+//  get("/user/:name") {
+//    async {
+//      UserDao.get(params("name")) map {
+//        case Some(u) => Ok(u)
+//        case None    => NonExistent()
+//      }
+//    }
+//  }
 
   get("/collection/?") {
     async {
@@ -129,13 +129,18 @@ class Server extends ScalatraServlet
     val filter = parsedBody.extract[Filter]
     async {
       InteractionDao.getAll(filter) map { case interactions =>
+        println(interactions)
         val allUsers = (interactions.map(_._1) ++ interactions.map(_._2)).distinct
         val nodes = Map(allUsers.zipWithIndex : _*)
-        ("nodes" -> allUsers.map("name" -> _)) ~
-        ("edges" -> interactions.map(t =>
-            ("source" -> nodes.get(t._1).get) ~
-            ("target" -> nodes.get(t._2).get) ~
-            ("value" -> t._3))
+        ("nodes" -> allUsers.map{case (name,details) =>
+          ("name" -> name) ~
+          ("popularity" -> details.map(_.popularity).getOrElse(-1.0)) ~
+          ("competence" -> details.map(_.popularity).getOrElse(-1.0))
+        }) ~
+        ("edges" -> interactions.map { case(source,target,count) =>
+            ("source" -> nodes.get(source).get) ~
+            ("target" -> nodes.get(target).get) ~
+            ("value" -> count)}
         )
       }
     }
@@ -166,6 +171,7 @@ class Server extends ScalatraServlet
   }
 
   get("/trending/options"){
+    Twitter.trendingOptions()
   }
 
   get("/trending/:woeid"){

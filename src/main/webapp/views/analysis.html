@@ -9,17 +9,21 @@
 
         <div layout="row" flex="50" ng-show="view == 'wordcloud'">
             <md-card flex="50" style="position: relative;" >
+                <span class="wordcloudtitle">Hashtags</span>
                 <div flex id="wordcloud-hashtags"></div>
             </md-card>
             <md-card flex="50" style="position: relative;">
+                <span class="wordcloudtitle">Words</span>
                 <div flex id="wordcloud-words"></div>
             </md-card>
         </div>
         <div layout="row" flex="50" ng-show="view == 'wordcloud'">
             <md-card flex="50" style="position: relative;">
+                <span class="wordcloudtitle">Names & Places</span>
                 <div flex id="wordcloud-names"></div>
             </md-card>
             <md-card flex="50" style="position: relative;">
+                <span class="wordcloudtitle">URLs</span>
                 <div flex id="wordcloud-urls"></div>
             </md-card>
         </div>
@@ -57,6 +61,19 @@
                      <md-radio-button value="clustered">Clustered</md-radio-button>
                      <md-radio-button value="heatmap">Heatmap</md-radio-button>
                  </md-radio-group>
+            </md-card-content>
+        </md-card>
+        <md-card ng-show="view == 'wordcloud'">
+            <md-card-header>
+                <md-card-header-text>
+                    <span class="md-title">Wordcloud colouring</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content>
+                <md-radio-group ng-model="wordcloudColoring" ng-change="setGradients()">
+                    <md-radio-button value="sentiment" class="md-primary" active>Sentiment</md-radio-button>
+                    <md-radio-button value="trustworthiness">Trustworthiness</md-radio-button>
+                </md-radio-group>
             </md-card-content>
         </md-card>
 

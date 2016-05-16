@@ -1,14 +1,10 @@
 package API.controller
 
-import java.util.concurrent.ConcurrentLinkedQueue
-
 import API.remotes.Twitter
 import twitter4j.{FilterQuery, Status}
-import scala.collection.JavaConversions._
-import scala.collection.parallel.mutable
-import scala.collection.parallel.mutable.ParHashMap
-import scala.concurrent.Future
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 class StreamImportController  (name: String, keywords: Seq[String], lon: Double, lat: Double, time: Long) extends ImportController(name,lon,lat,time,Some(keywords.mkString(","))) {
 
   val filter = new FilterQuery()
@@ -33,9 +29,7 @@ object StreamImportController {
       -1
     else {
       var size = 0
-      println("trying to get size")
       CURRENT.queue synchronized {size = CURRENT.queue.size}
-      println("size = " + size)
       size
     }
   }

@@ -42,7 +42,7 @@ object CrisisResponseSystemBuild extends Build {
         "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
         "com.mchange" % "c3p0" % "latest.integration",
         // Twitter
-        "org.twitter4j" % "twitter4j-stream" % "latest.integration",
+        "org.twitter4j" % "twitter4j-stream" % "4.0.4",
         //CSV
         "com.github.marklister" %% "product-collections" % "1.4.2",
         // Text analysis
