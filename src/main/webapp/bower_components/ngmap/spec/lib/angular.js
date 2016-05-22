@@ -7717,7 +7717,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
                 };
                 parentValueWatch.$stateful = true;
                 var unwatch;
-                if (definition.collection) {
+                if (definition.event) {
                   unwatch = scope.$watchCollection(attrs[attrName], parentValueWatch);
                 } else {
                   unwatch = scope.$watch($parse(attrs[attrName], parentValueWatch), null, parentGet.literal);

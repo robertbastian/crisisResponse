@@ -1,11 +1,11 @@
 package API.model
 
-case class Collection(
+case class Event(
   id: Option[Long],
   name: String,
-  status: Int,
   lon: Double,
   lat: Double,
   time: Long,
-  query: Option[String]
+  query: Option[String],
+  status: Int = 0
 )

@@ -19920,7 +19920,7 @@
         } %></ul>'
       );
 
-      var data = { 'collection': { 'a': 'A', 'b': 'B' } },
+      var data = { "event": { 'a': 'A', 'b': 'B' } },
           actual = compiled(data);
 
       assert.strictEqual(actual, '<ul><li>A</li><li>B</li></ul>');
@@ -20070,7 +20070,7 @@
 
         var expected = '<ul><li>0: a &amp; A</li><li>1: b &amp; B</li></ul>',
             compiled = _.template('<ul>{{ _.each(collection, function(value, index) {}}<li>{{= index }}: {{- value }}</li>{{}); }}</ul>', index ? null : settings),
-            data = { 'collection': ['a & A', 'b & B'] };
+            data = { "event": ['a & A', 'b & B'] };
 
         assert.strictEqual(compiled(data), expected);
         lodashStable.assign(_.templateSettings, settingsClone);
@@ -20091,7 +20091,7 @@
 
         var expected = '<ul><li>0: a &amp; A</li><li>1: b &amp; B</li></ul>',
             compiled = _.template('<ul><? _.each(collection, function(value, index) { ?><li><?= index ?>: <?- value ?></li><? }); ?></ul>', index ? null : settings),
-            data = { 'collection': ['a & A', 'b & B'] };
+            data = { "event": ['a & A', 'b & B'] };
 
         assert.strictEqual(compiled(data), expected);
         lodashStable.assign(_.templateSettings, settingsClone);
@@ -20102,7 +20102,7 @@
       assert.expect(1);
 
       var compiled = _.template('<%= index %><%= collection[index] %><% _.each(collection, function(value, index) { %><%= index %><% }); %>'),
-          actual = compiled({ 'index': 1, 'collection': ['a', 'b', 'c'] });
+          actual = compiled({ 'index': 1, "event": ['a', 'b', 'c'] });
 
       assert.strictEqual(actual, '1b012');
     });

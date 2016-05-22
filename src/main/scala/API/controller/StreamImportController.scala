@@ -1,15 +1,16 @@
 package API.controller
 
+import API.model.Event
 import API.remotes.Twitter
 import twitter4j.{FilterQuery, Status}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-class StreamImportController  (name: String, keywords: Seq[String], lon: Double, lat: Double, time: Long) extends ImportController(name,lon,lat,time,Some(keywords.mkString(","))) {
+class StreamImportController(e: Event) extends ImportController(e) {
 
   val filter = new FilterQuery()
   filter.language("en")
-  filter.track(keywords :_*)
+  filter.track(e.query.get.split(',') :_*)
   val queue = new scala.collection.mutable.HashSet[Status]
   val stream = Twitter.startStream(filter,(tweet: Status) => queue synchronized {queue.add(tweet)})
 
@@ -18,7 +19,7 @@ class StreamImportController  (name: String, keywords: Seq[String], lon: Double,
   protected def finish() {
     StreamImportController.CURRENT = null
     Twitter.endStream(stream)
-    analyze(queue)
+    finishedCollecting(queue)
   }
 }
 

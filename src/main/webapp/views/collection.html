@@ -2,17 +2,17 @@
 <div layout="column" flex="50">
     <div layout="row">
         <md-card flex>
-            <md-card-title class="md-headline">Select a collection</md-card-title>
+            <md-card-title class="md-headline">Select an event</md-card-title>
             <md-card-content>
-                <md-progress-circular md-mode="indeterminate" ng-hide="collections.length > 0"></md-progress-circular>
+                <md-progress-circular md-mode="indeterminate" ng-hide="events.length > 0"></md-progress-circular>
 
-                <md-list ng-show="collections.length > 0">
-                    <md-list-item ng-repeat="collection in collections" ng-click="selectCollection(collection)" class="md-2-line" ng-disabled="collection.status < 2">
+                <md-list ng-show="events.length > 0">
+                    <md-list-item ng-repeat="event in events" ng-click="selectEvent(event)" class="md-2-line" ng-disabled="event.status < 2">
                         <div class="md-list-item-text">
-                            <h3>{{ collection.name }}</h3>
-                            <p>{{["Collecting","Processing","Ready"][collection.status]}}</p>
+                            <h3>{{ event.name }}</h3>
+                            <p>{{["Collecting","Processing","Ready"][event.status]}}</p>
                         </div>
-                        <md-icon ng-click="delete($event,collection)" aria-label="Delete collection" class="md-secondary md-hue-3 material-icons md-warn">delete</md-icon>
+                        <md-icon ng-click="delete($event,event)" aria-label="Delete event" class="md-secondary md-hue-3 material-icons md-warn">delete</md-icon>
                     </md-list-item>
                 </md-list>
             </md-card-content>
@@ -22,23 +22,33 @@
         <md-card flex>
             <md-card-title class="md-headline">Import CSV</md-card-title>
             <md-card-content>
-                <form name="import" ng-submit="upload()">
-                    <md-input-container>
-                        <label>Collection name</label>
-                        <input ng-model="import_.name" type="text"/>
-                    </md-input-container>
-                        <md-button class="md-primary md-raised">
-                            <label for="fileInput">Select .csv</label>
-                        </md-button>
-                    <md-input-container>
-                        <input id="fileInput" name="file" type="file" class="ng-hide" accept="text/csv" ngf-select  ng-model='import_.file'>
-                        {{import_.file ? import_.file.name : ""}}
-                    </md-input-container>
-                    <md-input-container class="md-block" flex-gt-xs>
-                        <input type="submit" value='Process' class="md-primary md-button md-raised"/>
-                    </md-input-container>
-
-                </form>
+                <md-button class="md-primary md-button md-raised">
+                    <label for="fileInput">Select .csv</label>
+                </md-button>
+                <md-input-container>
+                    <form name="import" ng-submit="upload()">
+                    <input id="fileInput" name="file" type="file" class="ng-hide" accept="text/csv" ngf-select  ng-model='file.file'>
+                    </form>
+                    {{file.file ? file.file.name : ""}}
+                </md-input-container><br>
+                <md-input-container>
+                    <label>Event name</label>
+                    <input ng-model="file.name" type="text"/>
+                </md-input-container>
+                <md-input-container>
+                    <label>Reference time</label>
+                    <input mdc-datetime-picker date="true" time="true" type="text" short-time="false"
+                           placeholder="Reference time"
+                           format="DD/MM/YY HH:mm "
+                           ng-model="file.time">
+                </md-input-container>
+                <md-input-container>
+                    <label>Reference location</label>
+                    <input ng-model="file.location" g-places-autocomplete type="text"/>
+                </md-input-container>
+                <md-button class="md-primary md-raised md-block" ng-click="upload()" ng-disabled="!file.ready()">
+                    <label>Process</label>
+                </md-button>
             </md-card-content>
         </md-card>
     </div>
@@ -50,7 +60,7 @@
             <md-card-content>
                 <md-chips ng-model="streamtags" readonly="stream.active" placeholder="Search tags"></md-chips>
                 <md-input-container>
-                    <label>Collection name</label>
+                    <label>Event name</label>
                     <input ng-model="stream.name" type="text"/>
                 </md-input-container>
                 <md-input-container>
@@ -64,10 +74,10 @@
                     <label>Reference location</label>
                     <input ng-model="stream.location" g-places-autocomplete type="text"/>
                 </md-input-container>
-                <md-button class="md-primary md-raised md-block" ng-click="stream.start()" ng-disabled="!stream.ready()" ng-hide="stream.active">
+                <md-button class="md-primary md-raised md-block" ng-click="startStream()" ng-disabled="!stream.ready()" ng-hide="stream.active">
                     <label>Start collecting</label>
                 </md-button>
-                <md-button class="md-primary md-raised" ng-click="stream.stop()" ng-show="stream.active">
+                <md-button class="md-primary md-raised" ng-click="stopStream()" ng-show="stream.active">
                     <label>Finish collecting</label>
                 </md-button>
                 <span ng-show="stream.active">{{stream.count}} Tweets collected</span>

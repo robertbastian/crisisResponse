@@ -85,27 +85,33 @@
             </md-card-header>
             <md-card-content ng-show="selected.tweet">
                 <p class="md-block-1" ng-bind-html="selected.tweet.text | linky:'_blank'"></p>
-                <p class="md-caption">@{{selected.tweet.author.name}}, {{selected.tweet.time | date: 'dd/MM/yyyy hh:mm'}}</p>
+                <p class="md-caption">@{{selected.tweet.author.name}}, {{selected.tweet.time*1000 | date: 'dd/MM/yyyy hh:mm'}}</p>
                 <canvas class="chart chart-radar" chart-data="selected.graph.data" chart-labels='selected.graph.labels'>
                 </canvas>
             </md-card-content>
         </md-card>
-        <md-card ng-show="view == 'sng'" style="overflow:scroll;height:800px;">
+        <md-card ng-show="view == 'sng'">
             <md-card-header>
                 <md-card-header-text>
                     <span class="md-title">User Details</span>
+                    <span class="md-subtitle" ng-show="selected.user">{{selected.user}}</span>
                 </md-card-header-text>
             </md-card-header>
-            <md-card-content ng-show="selected.user">
-                <p class="md-block-1" ng-show="selected.tweets._1.length">@{{selected.user}} to others:
-                <ul>
-                    <li ng-repeat="tweet in selected.tweets._1">{{tweet.text}}</li>
-                </ul></p>
-
-                <p class="md-block-1" ng-show="selected.tweets._2.length">Others to @{{selected.user}}:
-                <ul>
-                    <li ng-repeat="tweet in selected.tweets._2">{{tweet.text}}<br><small>– @{{tweet.author}}</small></li>
-                </ul></p>
+            <md-card-content ng-show="selected.user" style="padding:0">
+                <md-tabs md-align-tabs="bottom" md-stretch-tabs="always" md-center-tabs="true" md-dynamic-height="true">
+                    <md-tab md-active="selected.tweets._2.length > 0" label="Mentioned">
+                        <md-tab-label>Mentioned</md-tab-label>
+                        <md-tab-body>
+                            <ul><p ng-repeat="tweet in selected.tweets._2">{{tweet.text}}<br><small>– @{{tweet.author}}</small></p></ul>
+                        </md-tab-body>
+                    </md-tab>
+                    <md-tab md-active="selected.tweets._2.length == 0" label="Posted">
+                        <md-tab-label>Posted</md-tab-label>
+                        <md-tab-body>
+                            <ul><li ng-repeat="tweet in selected.tweets._1">{{tweet.text}}</li></ul>
+                        </md-tab-body>
+                    </md-tab>
+                </md-tabs>
             </md-card-content>
         </md-card>
     </div>

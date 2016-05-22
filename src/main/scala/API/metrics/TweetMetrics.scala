@@ -1,133 +1,99 @@
 package API.metrics
 
-import java.sql.Timestamp
-
 import API.metrics.Helpers._
-import API.model.{Collection, Tweet, User}
+import API.model.Types.{Interaction, Word}
+import API.model.{Event, Tweet, User}
 import edu.stanford.nlp.ling.CoreAnnotations._
 import edu.stanford.nlp.neural.rnn.RNNCoreAnnotations
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations.SentimentAnnotatedTree
 import edu.stanford.nlp.util.CoreMap
-import org.carrot2.clustering.lingo.LingoClusteringAlgorithm
-import org.carrot2.core.{ControllerFactory, Document}
 import twitter4j.Status
-import scala.concurrent.ExecutionContext.Implicits.global
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TweetMetrics(collection: Collection, wordcounts: mutable.HashSet[(String,String,Long)], userinteraction: mutable.HashSet[(String,String,Long)]) {
+object TweetMetrics {
+  type Metric = Status => Double
 
-  def process(tweets: Iterable[Status], users: Map[Long, User]): Future[Iterable[Tweet]] = Future {
+  def apply(event: Event, tweets: Iterable[Status], analysedUsers: Map[Long, User]):
+    Future[(Iterable[Tweet],Set[User],Iterable[Word],Iterable[Interaction])] = Future {
 
-    val corroboration = {
-      try {
-        val results = ControllerFactory.createSimple().process(tweets.map(tweet => new Document(tweet.getText, null, tweet.getId.toString)).toList, collection.query.orNull, classOf[LingoClusteringAlgorithm])
-        var biggestCluster = results.getClusters.map(_.size).reduce(Math.max)
-        val map = (for {
-          cluster <- results.getClusters
-          document <- cluster.getAllDocuments
-        } yield (document.getContentUrl.toLong, 10.0 * cluster.size / biggestCluster)).toMap
-        (t: Status) => map.getOrElse(t.getId, 0.0)
-      }
-      catch {
-        case e: Throwable => e.printStackTrace(); (t: Status) => 0.0
+    val corroboration: Metric = {
+      val clusters = cluster(tweets,event.query)
+      val div = clusters.map(_.size).reduce(Math.max) / 10.0
+      val map = {
+        for (cluster <- clusters; document <- cluster.getAllDocuments)
+          yield document.getContentUrl.toLong -> cluster.size / div
+      }.toMap
+      t => map.getOrElse(t.getId, 0.0)
+    }
+
+    val proximity: Metric = tweet => analysedUsers.get(tweet.getUser.getId) match {
+      case _ if tweet.getGeoLocation != null =>
+        10 - 1.08574 * Math.log(distance(tweet.getGeoLocation,event))
+      case Some(user) if user.latitude.isDefined =>
+        5 - 0.54287 * Math.log(distance(user,event))
+      case _ => 0.0
+    }
+
+    val recency: Metric = tweet =>
+      log(0.3769)((tweet.getCreatedAt.getTime/1000 - event.time) / (60*86400))
+
+    val words = new mutable.ListBuffer[Word]
+    val interactions = new mutable.ListBuffer[Interaction]
+    def wordAnalysisAndSentiments(tweet: Status): Seq[(Int,Int)] = {
+      for (sentence: CoreMap <- pipeline.process(tweet.getText).get(classOf[SentencesAnnotation])) yield {
+        val sentiment = RNNCoreAnnotations.getPredictedClass(sentence.get(classOf[SentimentAnnotatedTree]))
+        for (token <- sentence.get(classOf[TokensAnnotation])) {
+          val rawWord: String = token.get(classOf[TextAnnotation])
+          val normalisedWord: String = token.get(classOf[LemmaAnnotation])
+          val partOfSpeech: String = token.get(classOf[PartOfSpeechAnnotation])
+          val namedEntity: String = token.get(classOf[NamedEntityTagAnnotation])
+
+          if (rawWord.charAt(0) == '@' && rawWord.length > 1)
+            interactions += ((tweet.getUser.getScreenName.toLowerCase, rawWord.substring(1).toLowerCase, tweet.getId))
+          else if (rawWord.charAt(0) == '#')
+            words += ((rawWord, "HASHTAG", tweet.getId))
+          else if (rawWord.matches(URL_REGEX.regex)) {
+            val resolved = resolveUrl(rawWord)
+            if (!isTwitterURL(resolved))
+              words += ((resolved, "URL", tweet.getId))
+          }
+          else if (namedEntity == "LOCATION" || namedEntity == "PERSON" || namedEntity == "ORGANIZATION")
+            words += ((normalisedWord, namedEntity, tweet.getId))
+          else partOfSpeech match {
+            case "NN" | "NNP" | "NNPS" | "NNS" //nouns
+              | "JJ" | "JJR" | "JJS" | "RB" | "RBR" | "RBS" //adjectives and adverbs
+              | "VB" | "VBD" | "VBG" | "VBN" | "VBP" | "VBZ" //verbs
+              | "CD" | "PDT" | "FW" //misc
+            if !isStopWord(normalisedWord) => words += ((normalisedWord.toLowerCase, partOfSpeech, tweet.getId))
+            case _ =>
+          }
+        }
+        (sentence.toString.length,sentiment)
       }
     }
 
-    def proximity(tweet: Status): Double = {
-      if (tweet.getGeoLocation != null) {
-        val d = distance(tweet.getGeoLocation.getLatitude,collection.lat,tweet.getGeoLocation.getLongitude,collection.lon)
-        inInterval(10 - Math.log(d/20) / Math.log(3.51))
-      }
-      else users.get(tweet.getUser.getId) match {
-        case Some(u) if u.latitude.isDefined =>
-          val d = distance(u.latitude.get,collection.lat,u.longitude.get,collection.lon)
-          inInterval(10 - Math.log(d/20) / Math.log(3.51))/2
-        case _ => 0.0
-      }
+    val sentiment: Metric = {
+      val sentiments = tweets.map(tweet => tweet.getId -> weightedAverage(wordAnalysisAndSentiments(tweet)) * 2.5).toMap
+      t => sentiments.getOrElse(t.getId,0.0)
     }
 
-    def recency(tweet: Status): Double = inInterval(Math.log((tweet.getCreatedAt.getTime/1000 - collection.time) / (60*86400))/ Math.log(0.3769))
-
-    val sentiment = {
-      val map = tweets.map(tweet => tweet.getId -> wordAnalysis(tweet)).toMap
-      (t: Status) => map.get(t.getId) match {
-          // Sentiment of longest sentence
-//        case Some(sents) => sents.reduce((s1,s2) => if (s1._1 > s2._1) s1 else s2)._2.toDouble * 3
-          // Weighted average
-        case Some(sents) =>
-          val (weightedSum, count) = sents.foldLeft((0.0,0)) {case ((ws, c), (l,s)) => (ws + l * s,c + l)}
-          weightedSum / count * 5
-        case None => 0.0
-      }
-    }
-
-    for (tweet <- tweets) yield Tweet(
+    val processedTweets = for (tweet <- tweets) yield Tweet(
       Some(tweet.getId),
       tweet.getText,
       tweet.getUser.getScreenName,
-      new Timestamp(tweet.getCreatedAt.getTime),
-      collection.id.get,
+      tweet.getCreatedAt.getTime/1000,
+      event.id.get,
       Option(tweet.getGeoLocation).map(_.getLatitude),
       Option(tweet.getGeoLocation).map(_.getLongitude),
-      sentiment(tweet),
-      recency(tweet),
-      corroboration(tweet),
-      proximity(tweet)
+      restrictInterval(sentiment(tweet)),
+      restrictInterval(recency(tweet)),
+      restrictInterval(corroboration(tweet)),
+      restrictInterval(proximity(tweet))
     )
-  }
-
-  private def wordAnalysis(tweet: Status): Seq[(Int,Int)] = {
-    val tree = pipeline.process(tweet.getText)
-
-    for (sentence: CoreMap <- tree.get(classOf[SentencesAnnotation])) yield {
-      for (token <- sentence.get(classOf[TokensAnnotation])) {
-        // Raw word
-        val word: String = token.get(classOf[TextAnnotation])
-        // Word in its base form (i.e. infinitive, lowercase?)
-        val lemma: String = token.get(classOf[LemmaAnnotation])
-        // Type of word
-        val pos: String = token.get(classOf[PartOfSpeechAnnotation])
-        // Named entity classification
-        val ne: String = token.get(classOf[NamedEntityTagAnnotation])
-
-        if (lemma.charAt(0) == '@' && lemma.length > 1) {
-          userinteraction synchronized {
-            userinteraction.add((tweet.getUser.getScreenName, lemma.substring(1).toLowerCase, tweet.getId))
-          }
-        }
-        else if (lemma.charAt(0) == '#') {
-          wordcounts synchronized {
-            wordcounts.add((lemma, "HASHTAG", tweet.getId))
-          }
-        }
-        else if (word.matches(URL_REGEX.regex)) {
-          val resolved = resolveUrl(word)
-          if (!resolved.matches("""https?:\/\/(www\.)?(twitter.com|t.co).*""")){
-            wordcounts synchronized {
-              wordcounts.add((resolved, "URL", tweet.getId))
-            }
-          }
-        }
-        else if (ne == "LOCATION" || ne == "PERSON" || ne == "ORGANIZATION") {
-          wordcounts synchronized {
-            wordcounts.add((lemma, ne, tweet.getId))
-          }
-        }
-        else pos match {
-          case "CD" | "PDT" //'amounts'
-               | "FW" //foreign words
-               | "JJ" | "JJR" | "JJS" | "RB" | "RBR" | "RBS" //adjectives and adverbs
-               | "NN" | "NNP" | "NNPS" | "NNS" //nouns
-               | "VB" | "VBD" | "VBG" | "VBN" | "VBP" | "VBZ" //verbs
-            if !isStopWord(lemma) => wordcounts synchronized {
-            wordcounts.add((lemma.toLowerCase, pos, tweet.getId))
-          }
-          case _ =>
-        }
-      }
-      (sentence.toString.length,RNNCoreAnnotations.getPredictedClass(sentence.get(classOf[SentimentAnnotatedTree])))
-    }
+    (processedTweets,analysedUsers.values.toSet,words,interactions)
   }
 }

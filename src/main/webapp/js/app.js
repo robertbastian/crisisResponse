@@ -13,7 +13,7 @@ angular.module('crisisResponse', [
 .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
   $routeProvider.when("/",{
     redirectTo: "/collection"
-  })
+  });
 
   $locationProvider.html5Mode(false);
 }])
@@ -50,11 +50,11 @@ angular.module('crisisResponse', [
 
 .service('gloVars', function () {
   var filter = null;
-  var collectionDetails = null;
+  var eventDetails = null;
   return {
-    setCollection: function(collection){
+    selectEvent: function(event){
       filter = {
-        collection: collection.id,
+        event: event.id,
         time: null,
         sentiment: null,
         competence: null,
@@ -63,13 +63,13 @@ angular.module('crisisResponse', [
         locationBehaviour: "fromUser",
         noRetweets: true
       };
-      collectionDetails = collection;
+      eventDetails = event;
     },
     filter: function(){
       return filter;
     },
-    collectionDetails: function() {
-      return collectionDetails;
+    eventDetails: function() {
+      return eventDetails;
     }
   };
 });

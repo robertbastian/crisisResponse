@@ -50,7 +50,7 @@ object Twitter {
 
         override def getProfileSidebarFillColor: String = null
 
-        override def getScreenName: String = "INACCESSIBLE"
+        override def getScreenName: String = name
 
         override def getListedCount: Int = 0
 
@@ -143,6 +143,9 @@ object Twitter {
         override def getRateLimitStatus: RateLimitStatus = null
       }
     }
+  }
+  def users(names: Iterable[String]): Iterable[User] = {
+    names.map(user)
   }
 
 

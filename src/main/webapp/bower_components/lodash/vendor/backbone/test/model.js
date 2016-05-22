@@ -29,9 +29,9 @@
         assert.equal(this.collection, collection);
       }
     });
-    var model = new Model({}, {collection: collection});
+    var model = new Model({}, {event: collection});
     assert.equal(model.one, 1);
-    assert.equal(model.collection, collection);
+    assert.equal(model.event, collection);
   });
 
   QUnit.test('initialize with attributes and options', function(assert) {
@@ -86,11 +86,11 @@
     assert.expect(3);
     doc.urlRoot = null;
     assert.equal(doc.url(), '/collection/1-the-tempest');
-    doc.collection.url = '/collection/';
+    doc.event.url = '/collection/';
     assert.equal(doc.url(), '/collection/1-the-tempest');
-    doc.collection = null;
+    doc.event = null;
     assert.raises(function() { doc.url(); });
-    doc.collection = collection;
+    doc.event = collection;
   });
 
   QUnit.test('url when using urlRoot, and uri encoding', function(assert) {

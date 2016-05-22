@@ -2,9 +2,10 @@ package API.database
 
 import java.sql.Timestamp
 
-import API.database.DatabaseConnection.db
-import API.model.{Filter, Tweet}
-import API.stuff.LoggableFuture._
+import API.database.DatabaseConnection._
+import UserDao._
+import API.model.{User, Filter, Tweet}
+import API.stuff.FutureImplicits._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.Query
 
@@ -18,8 +19,8 @@ object TweetDao {
     def id = column[Long]("id", O.PrimaryKey)
     def text = column[String]("text")
     def author = column[String]("author")
-    def time = column[Timestamp]("time")
-    def collection = column[Long]("collection")
+    def time = column[Long]("time")
+    def event = column[Long]("event")
     def latitude = column[Option[Double]]("latitude")
     def longitude = column[Option[Double]]("longitude")
     def sentiment = column[Double]("sentiment")
@@ -27,50 +28,50 @@ object TweetDao {
     def corroboration = column[Double]("corroboration")
     def proximity = column[Double]("proximity")
 
-    def * = (id.?, text, author, time, collection, longitude, latitude, sentiment, recency, corroboration, proximity).shaped <> (Tweet.tupled, Tweet.unapply)
+    def * = (id.?, text, author, time, event, latitude, longitude, sentiment, recency, corroboration, proximity) <> (Tweet.tupled, Tweet.unapply)
   }
 
   val tweets = TableQuery[TweetTable]
 
   def filtered(filter: Filter): Query[TweetTable, Tweet, Seq] = {
-    var query = tweets.filter(_.collection === filter.collection)
+    def limit[A, B <: Table[A]](query: Query[B,A,Seq], selector: B => Rep[Double], limits: Seq[Double]): Query[B,A,Seq] =
+      query.filter(c => selector(c) between(limits(0),limits(1)))
+    // The Rep type doesn't play nicely with generics :(
+    def limitL[A, B <: Table[A]](query: Query[B,A,Seq], selector: B => Rep[Long], limits: Seq[Long]): Query[B,A,Seq] =
+      query.filter(c => selector(c) between(limits(0),limits(1)))
+
+    var query = tweets.filter(_.event === filter.event)
+
     if (filter.locationBehaviour.isDefined && filter.locationBehaviour.get == "exclude")
       query = query.filter(t => t.longitude.isDefined)
+
     if (filter.noRetweets)
       query = query.filterNot(t => t.text like "RT%")
+
     if (filter.sentiment.isDefined)
-      query = query.filter(t => t.sentiment >= filter.sentiment.get.head).filter(t => t.sentiment < filter.sentiment.get.apply(1))
+      query = limit(query,(_:TweetTable).sentiment,filter.sentiment.get)
+
     if (filter.corroboration.isDefined)
-      query = query.filter(t => t.corroboration >= filter.corroboration.get.head).filter(t => t.corroboration < filter.corroboration.get.apply(1))
-    if (filter.popularity.isDefined){
-      query = for {
-        ts <- query
-        us <- UserDao.users.filter(u => u.popularity >= filter.popularity.get.head).filter(u => u.popularity < filter.popularity.get.apply(1))
-        if ts.author === us.name
-      } yield ts
-    }
-    if (filter.competence.isDefined){
-      query = for {
-        ts <- query
-        us <- UserDao.users.filter(u => u.competence >= filter.competence.get.head).filter(u => u.competence < filter.competence.get.apply(1))
-        if ts.author === us.name
-      } yield ts
-    }
+      query = limit(query,(_:TweetTable).corroboration,filter.corroboration.get)
+
+    if (filter.popularity.isDefined)
+      query = query join limit(users,(_:UsersTable).popularity,filter.popularity.get) on (_.author === _.name) map {_._1}
+
+    if (filter.competence.isDefined)
+      query = query join limit(users,(_:UsersTable).competence,filter.competence.get) on (_.author === _.name) map {_._1}
+
     if (filter.time.isDefined)
-      query = query.filter(t => t.time >= new Timestamp(filter.time.get.head.toLong*60000L))
-                   .filter(t => t.time < new Timestamp(filter.time.get.apply(1).toLong*60000L))
+      query = limitL(query,(_:TweetTable).time,filter.time.get.map(_ * 60))
     query
   }
 
-  def get(id: Long): Future[Option[Tweet]] = db run tweets.filter(_.id === id).result.headOption thenLog s"Getting tweet $id"
+  def get(id: Long): Future[Option[(Tweet, Option[User])]] = db run (tweets.filter(_.id === id) joinLeft UserDao.users on (_.author like _.name)).result.headOption thenLog s"Getting tweet $id"
 
-  def tweetsBy(user: String): Future[Seq[Tweet]] = db run tweets.filter(_.author === user).result thenLog s"Getting tweets by '$user'"
+  def get(filter: Filter): Future[Seq[Tweet]] = db run filtered(filter).result thenLog s"Getting all tweets with $filter"
 
-  def filteredTweets(filter: Filter): Future[Seq[Tweet]] = db run filtered(filter).result thenLog s"Getting all tweets with $filter"
+  def byUser(user: String): Future[Seq[Tweet]] = db run tweets.filter(_.author === user).result thenLog s"Getting tweets by '$user'"
 
-  def create(ts: Iterable[Tweet]): Future[Option[Int]] = db run (tweets ++= ts) thenLog s"Inserting ${ts.size} tweets into the database"
-
-  def update(ts: Seq[Tweet]) = db run DBIO.sequence(ts map {t => tweets.filter(_.id === t.id) update t})
+  def save(ts: Iterable[Tweet]): Future[Option[Int]] = db run (tweets ++= ts) thenLog s"Inserting ${ts.size} tweets into the database"
 
   def locations(f: Filter): Future[Seq[(Long, Double, Double)]] = f.locationBehaviour match {
     case Some("fromUser") => {
@@ -89,24 +90,22 @@ object TweetDao {
   def count(filter: Filter): Future[(Int,Int)] = db run (
     for {
       selected <- filtered(filter).length.result
-      all <- filtered(Filter(filter.collection)).length.result
+      all <- filtered(Filter(filter.event)).length.result
     } yield (selected, all)
   )
 
-  def histogram(filter: Filter, attribute: String, buckets: Int): Future[(Long,Long,Seq[Int])] = {
-    val dom: Seq[Long] = Array(0L,10L)
-    db run sql"""SELECT width_bucket(#$attribute,${dom(0)},${dom(1)+.000000001},$buckets) as bucket, COUNT(*)
+  def histogram(filter: Filter, attribute: String, buckets: Int = 10): Future[(Long,Long,Seq[Int])] = if (attribute == "time") histogramT(filter) else
+    db run sql"""SELECT width_bucket(#$attribute,0.0,10.000000001,$buckets) as bucket, COUNT(*)
                   FROM "Tweet" t, "User" u
-                  WHERE collection = ${filter.collection} AND t.author = u.name
-                  GROUP BY bucket;""".as[(Int,Int)] map {raw => (dom(0),dom(1),(1 to buckets).map{i => raw.toMap.getOrElse(i, 0)})}
-  }
+                  WHERE event = ${filter.event} AND t.author = u.name
+                  GROUP BY bucket;""".as[(Int,Int)] map {raw => (0L,10L,(1 to buckets).map{i => raw.toMap.getOrElse(i, 0)})}
 
   def histogramT(filter: Filter): Future[(Long,Long,Seq[Int])] =
-    db run sql"""SELECT extract(epoch from MIN(time)), extract(epoch from MAX(time))+60 FROM "Tweet" t WHERE collection = ${filter.collection}""".as[(Long,Long)] flatMap { case Vector((min, max)) =>
+    db run sql"""SELECT MIN(time), MAX(time)+60 FROM "Tweet" t WHERE event = ${filter.event}""".as[(Long,Long)] flatMap { case Vector((min, max)) =>
       val buckets = ((max-min)/60).toInt
-      db run sql"""SELECT width_bucket(extract(epoch from time),$min,$max,$buckets) as bucket, COUNT(*)
+      db run sql"""SELECT width_bucket(time,$min,$max,$buckets) as bucket, COUNT(*)
                   FROM "Tweet" t, "User" u
-                  WHERE collection = ${filter.collection} AND t.author = u.name
+                  WHERE event = ${filter.event} AND t.author = u.name
                   GROUP BY bucket;""".as[(Int,Int)] map {raw => (min.toLong/60,max.toLong/60,(1 to buckets).map{i => raw.toMap.getOrElse(i, 0)})}
     }
 }

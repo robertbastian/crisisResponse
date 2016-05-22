@@ -3,8 +3,12 @@ package API.metrics
 import java.net.{URL, HttpURLConnection}
 import java.util.Properties
 
+import API.model.Event
 import edu.stanford.nlp.pipeline.StanfordCoreNLP
-import twitter4j.User
+import org.carrot2.clustering.lingo.LingoClusteringAlgorithm
+import org.carrot2.core.{Cluster, Document, ControllerFactory}
+import twitter4j.{GeoLocation, Status, User}
+import scala.collection.JavaConversions._
 
 object Helpers {
   // NLP setup
@@ -53,8 +57,10 @@ object Helpers {
 
     R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   }
+  def distance(gl: GeoLocation, event: Event): Double = distance(gl.getLatitude,event.lat,gl.getLongitude,event.lon)
+  def distance(u: API.model.User, event: Event): Double = distance(u.latitude.get,event.lat, u.longitude.get,event.lon)
 
-  def inInterval(x: Double, lower: Int = 0, upper: Int = 10): Double = Math.min(10,Math.max(0,x))
+  def restrictInterval(x: Double, lower: Int = 0, upper: Int = 10): Double = Math.min(10,Math.max(0,x))
 
   def isNewsAgency(user: User): Boolean = newsAgencyIds.contains(user.getId)
   private val newsAgencyIds = Set[Long](
@@ -98,4 +104,15 @@ object Helpers {
     "reporter","editor","journalist","correspondent","news presenter"
   ).mkString("|") + ").*"
   def isJournalist(user: User) = Option(user.getDescription) map { _.toLowerCase matches journalismMatcher} getOrElse(false)
+
+  def log(base: Double)(power: Double): Double = Math.log(power) / Math.log(base)
+
+  def cluster(tweets: Iterable[Status], query: Option[String]): scala.collection.mutable.Buffer[Cluster] = ControllerFactory.createSimple().process(tweets.map(tweet => new Document(tweet.getText, null, tweet.getId.toString)).toList, query.orNull, classOf[LingoClusteringAlgorithm]).getClusters
+
+  def isTwitterURL(u: String) = u.matches("""https?:\/\/(www\.)?(twitter.com|t.co).*""")
+
+  def weightedAverage(xs: Iterable[(Int,Int)]) = {
+    val (sum, count) = xs.foldLeft((0.0,0)) {case ((ws, c), (l,s)) => (ws + l * s,c + l)}
+    sum / count
+  }
 }

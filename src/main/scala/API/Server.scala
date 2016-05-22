@@ -3,11 +3,10 @@ package API
 import java.io.FileInputStream
 
 import API.controller.{FileImportController, StreamImportController}
-import API.database.WordsDao.Word
+import API.database.WordsDao.RichWord
 import API.database._
-import API.model.{Collection, Filter}
+import API.model.{Event, Filter}
 import API.remotes.Twitter
-import API.stuff.StreamConfig
 import org.json4s.JsonDSL._
 import org.json4s._
 import org.scalatra._
@@ -29,72 +28,74 @@ class Server extends ScalatraServlet
     case e: Throwable => println(e.getMessage); InternalServerError("Server error")
   }
 
-  get("/tweet/:id") {
+
+  /** COLLECTION SCREEN **/
+
+  get("/events") {
     async {
-      TweetDao.get(params("id").toLong) map {
-        case Some(t) => UserDao.get(t.author) map {
-          case Some(u) => Ok(Seq(t,u))
-          case None => InternalServerError("DB inconsistent")
-        }
+      EventDao.list
+    }
+  }
+
+  get("/event/:id"){
+    async {
+      EventDao.get(params("id").toInt) map {
+        case Some(event) => Ok(event)
         case None    => NonExistent()
       }
     }
   }
 
-//  get("/user/:name") {
-//    async {
-//      UserDao.get(params("name")) map {
-//        case Some(u) => Ok(u)
-//        case None    => NonExistent()
-//      }
-//    }
-//  }
-
-  get("/collection/?") {
+  delete("/event/:id") {
     async {
-      CollectionDao.all
+      EventDao.delete(Option(params("id").toLong)) map { _ => Ok(true) }
     }
   }
 
-  get("/collection/:id"){
+  post("/event/upload"){
     async {
-      CollectionDao.get(params("id").toInt) map {
-        case Some(c) => Ok(c)
-        case None    => NonExistent()
-      }
+      new FileImportController(parsedBody.extract[Event], fileParams("file").getInputStream).createdEvent map {Created(_)}
     }
   }
 
-  delete("/collection/:id") {
+  post("/event/stream/start") {
     async {
-      CollectionDao.delete(Collection(Some(params("id").toLong),null,0,0,0,0,null)) map { _ => Ok(true) }
+      new StreamImportController(parsedBody.extract[Event]).createdEvent map {Created(_)}
     }
   }
 
-  post("/collection/:name"){
-    async {
-      val i = new FileImportController(params("name"), fileParams("file").getInputStream)
-      i.collection map {Created(_)}
+  get("/event/stream/status"){
+    async{
+      StreamImportController.active map { ("count",_) }
     }
   }
+
+  post("/event/stream/end"){
+    StreamImportController.finish()
+    true
+  }
+
+  get("/trends/:id"){
+    params("id") match  {
+      case "options" => Twitter.trendingOptions() map {e => ("name", e._1) ~ ("woeid", e._2)}
+      case woeid: String => Twitter.trending(woeid.toInt)
+    }
+  }
+
+  /** FILTER SCREEN **/
 
   post("/count"){
     async{
-      val filter = parsedBody.extract[Filter]
-      TweetDao.count(filter) map { case (selected,all) =>
+      TweetDao.count(parsedBody.extract[Filter]) map { case (selected,all) =>
         ("selected",selected) ~
         ("all",all)
       }
     }
   }
 
-  post("/histogram/:selector/:buckets"){
+  post("/histogram/:selector"){
     async {
-      val filter = parsedBody.extract[Filter]
-      (params("selector") match {
-        case "time" => TweetDao.histogramT(filter)
-        case _ => TweetDao.histogram(filter, params("selector"), params("buckets").toInt)
-      }) map { case (min, max, buckets) =>
+      TweetDao.histogram(parsedBody.extract[Filter],params("selector")) map { case (min, max, buckets) =>
         ("min", min) ~
         ("max", max) ~
         ("buckets", buckets)
@@ -102,21 +103,30 @@ class Server extends ScalatraServlet
     }
   }
 
+  /** VISUALISATION SCREEN **/
+
   post("/locations"){
     async {
-      val filter = parsedBody.extract[Filter]
-      TweetDao.locations(filter).map(_.map(r =>
-          ("id" -> r._1.toString) ~ // Best way in JS to represent 53-bits or more -.-
+      TweetDao.locations(parsedBody.extract[Filter]).map(_.map(r =>
+          ("id" -> r._1.toString) ~ // Only way in JS to represent 53-bits or more
           ("location" -> List(r._2,r._3))
       ))
     }
   }
 
-  post("/wordcounts"){
+  get("/tweet/:id") {
     async {
-      val filter = parsedBody.extract[Filter]
-      WordsDao.getAll(filter) map {case Seq(hashtags,names,urls,rest) =>
-        def transform(w: Word) = ("text" -> w.text) ~ ("weight" -> w.weight) ~ ("type" -> w.kind) ~ ("sentiments" -> w.sentiments) ~ ("trustworthinesses" -> w.trustworthinesses)
+      TweetDao.get(params("id").toLong) map {
+        case Some((tweet,userOpt)) => Ok(Seq(tweet,userOpt))
+        case None => NonExistent()
+      }
+    }
+  }
+
+  post("/words"){
+    async {
+      WordsDao.getAll(parsedBody.extract[Filter]) map {case Seq(hashtags,names,urls,rest) =>
+        def transform(w: RichWord) = ("text" -> w.text) ~ ("weight" -> w.weight) ~ ("type" -> w.kind) ~ ("sentiments" -> w.sentiments) ~ ("trustworthinesses" -> w.trustworthinesses)
         ("hashtags" -> hashtags.map(transform)) ~
         ("names" -> names.map(transform)) ~
         ("urls" -> urls.map(transform)) ~
@@ -126,77 +136,50 @@ class Server extends ScalatraServlet
   }
 
   post("/interactions"){
-    val filter = parsedBody.extract[Filter]
     async {
-      InteractionDao.getAll(filter) map { case interactions =>
-        println(interactions)
-        val allUsers = (interactions.map(_._1) ++ interactions.map(_._2)).distinct
-        val nodes = Map(allUsers.zipWithIndex : _*)
-        ("nodes" -> allUsers.map{case (name,details) =>
-          ("name" -> name) ~
-          ("popularity" -> details.map(_.popularity).getOrElse(-1.0)) ~
-          ("competence" -> details.map(_.popularity).getOrElse(-1.0))
+      InteractionDao.createGraph(parsedBody.extract[Filter]) map { case (vertices,edges) =>
+        ("edges" -> edges.groupBy(identity).map{
+          case ((from,to),a) => ("source" -> from) ~ ("target" -> to) ~ ("value" -> a.size)
         }) ~
-        ("edges" -> interactions.map { case(source,target,count) =>
-            ("source" -> nodes.get(source).get) ~
-            ("target" -> nodes.get(target).get) ~
-            ("value" -> count)}
-        )
+        ("nodes" -> vertices.map{
+          case Left(user) => ("name" -> user.name) ~ ("popularity" -> user.popularity) ~ ("competence" -> user.competence)
+          case Right(name) => ("name" -> name) ~ ("popularity" -> -1) ~ ("competence" -> -1)
+        })
       }
     }
   }
 
   post("/interactions/:user"){
-    val filter = parsedBody.extract[Filter]
     val u = params("user")
     async {
-      InteractionDao.getBy(u,filter) map {tweets =>
+      InteractionDao.withUser(u,parsedBody.extract[Filter]) map { tweets =>
         tweets.partition(_.author == u)
       }
     }
   }
 
+  /** DEBUG **/
+
   get("/initM"){
     async {
-      val i = new FileImportController("Medium", new FileInputStream("resources/medium.csv"))
-      i.collection map {Created(_)}
+      val i = new FileImportController(Event(None,"Medium",-80.0145,32.8982,1428154200L,None), new FileInputStream("resources/medium.csv"))
+      i.createdEvent map {Created(_)}
     }
   }
 
   get("/initS"){
     async {
-      val i = new FileImportController("Small", new FileInputStream("resources/short.csv"))
-      i.collection map {Created(_)}
+      val i = new FileImportController(Event(None,"Small",-80.0145,32.8982,1428154200L,None), new FileInputStream("resources/short.csv"))
+      i.createdEvent map {Created(_)}
     }
   }
 
-  get("/trending/options"){
-    Twitter.trendingOptions()
-  }
-
-  get("/trending/:woeid"){
-    params("woeid") match  {
-      case "options" => Twitter.trendingOptions() map {e => ("name", e._1) ~ ("woeid", e._2)}
-      case woeid: String => Twitter.trending(woeid.toInt)
+  get("/addUsers"){
+    async {
+      InteractionDao.unanlysedUsers map { ns =>
+        metrics.UserMetrics(Twitter.users(ns)).map(m => UserDao.save(m.values))
+      }
     }
-  }
-
-
-  post("/stream/start") {
-    val config = parsedBody.extract[StreamConfig]
-    new StreamImportController(config.name, config.query, config.lon, config.lat, config.time)
-    true
-  }
-
-  get("/stream/status"){
-    async{
-      StreamImportController.active map { ("count",_) }
-    }
-  }
-
-  post("/stream/end"){
-    StreamImportController.finish()
-    true
   }
 
   // JSON config

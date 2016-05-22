@@ -10,73 +10,135 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload','google.pl
 }])
 
 .controller('CollectionController', function($scope,$http,$mdDialog,$location,Upload,gloVars, $timeout) {
-  $scope.collections = [];
 
-  loadCollections();
+  /** EVENT HANDLING **/
 
-  function loadCollections() {
-    return $http.get("/api/collection/").then(function(response) {
-      $scope.collections = response.data;
+  $scope.events = [];
+  function loadEvents() {
+    return $http.get("/api/events").then(function(response) {
+      $scope.events = response.data;
     })
   }
 
-  function deleteCollection(collection){
-    $http.delete("/api/collection/"+collection.id).then(function(){
-      loadCollections();
+  loadEvents();
+
+  function updateEvents(){
+    loadEvents().then(function(){
+      if($scope.events.filter(function(e){return e.status < 2}).length > 0)
+        $timeout(updateEvents,5000)
     })
   }
 
-  $scope.selectCollection = function(collection){
-    gloVars.setCollection(collection);
+  $scope.selectEvent = function(event){
+    gloVars.selectEvent(event);
     $location.path("/selection");
   };
 
-  $scope.active = function(collection){
-    return collection.id == gloVars.filter().collection;
+  $scope.active = function(event){
+    return event.id == gloVars.filter().event;
   };
 
 
-  $scope.delete = function(ev,collection) {
-    var confirm = $mdDialog.confirm()
-      .title('Do you really want to delete this collection?')
-      .textContent("The collection "+collection.name+" contains "+collection.size+" tweets.")
+  $scope.delete = function(e,event) {
+    var dialog = $mdDialog.confirm()
+      .title('Do you really want to delete this event?')
       .ariaLabel("Confirm deletion")
-      .targetEvent(ev)
+      .targetEvent(e)
       .ok("Delete")
       .cancel("Cancel");
-    $mdDialog.show(confirm).then(function() {
-      deleteCollection(collection)
+    $mdDialog.show(dialog).then(function() {
+      $http.delete("/api/event/"+event.id).then(function(){
+        loadEvents();
+      })
     });
   };
-  
+
+  /** FILE IMPORT **/
+
+  $scope.file = {
+    name: null,
+    time: null,
+    location: null,
+    file: null,
+    ready: function(){
+      return $scope.file.name != null && $scope.file.name != "" &&
+        $scope.file.file != null &&
+        $scope.file.time != null && $scope.fiile.time != "" &&
+        $scope.file.location && typeof $scope.file.location === 'object' && "geometry" in $scope.file.location
+    }
+  };
   $scope.upload = function () {
-    Upload.upload({
-      url: "/api/collection/"+$scope.import_.name,
-      data: {file: $scope.import_.file},
-      headers : {
-        'Content-Type': undefined
-      }
+    $http.post("/api/event/upload/",{
+        name: $scope.file.name,
+        lat: $scope.file.location.geometry.location.lat(),
+        lon: $scope.file.location.geometry.location.lon(),
+        time: moment($scope.file.time).unix(),
+        query: $scope.file.file
     }).then(function success(response) {
-      $scope.import_ = null;
-
-      updateCollections();
-
-    }, function error(e){
-      alert(e);
-    });
+      $scope.file.name = null;
+      $scope.file.time = null;
+      $scope.file.location = null;
+      $scope.file = null;
+      updateEvents();
+    }, console.log);
   };
 
-  function updateCollections(){
-    loadCollections().then(function(){
-      if($scope.collections.filter(function(e,i){return e.status < 2}).length > 0)
-        $timeout(updateCollections,1000)
+  /** STREAM IMPORT **/
+
+  $scope.stream = {
+    name: null,
+    time: null,
+    location: null,
+    active: false,
+    count: 0,
+    ready: function(){
+      return $scope.stream.name != null && $scope.stream.name != "" &&
+        $scope.streamtags.length > 0 &&
+        $scope.stream.time != null && $scope.stream.time != "" &&
+        $scope.stream.location && typeof $scope.stream.location === 'object' && "geometry" in $scope.stream.location
+    }
+  };
+  $scope.streamtags = [];
+
+  $scope.startStream = function(){
+    $http.post('/api/event/stream/start',{
+      name: $scope.stream.name,
+      lat: $scope.stream.location.geometry.location.lat(),
+      lon: $scope.stream.location.geometry.location.lng(),
+      time: moment($scope.stream.time).unix(),
+      query: $scope.streamtags.join(",")
+    }).then(function(){
+      $scope.stream.active = true;
+      setTimeout(loadEvents,500);
+      setTimeout(loadCount,500);
+    })
+  };
+
+  $scope.stopStream = function(){
+    $http.post("/api/event/stream/end").then(function(response){
+      $scope.stream.active = false;
+      $scope.stream.name = null;
+      $scope.stream.time = null;
+      $scope.stream.location = null;
+      $scope.streamtags = [];
+      setTimeout(updateEvents, 500);
+    })
+  };
+
+  function loadCount(){
+    $http.get('/api/event/stream/status').then(function(response){
+      $scope.stream.count = response.data.count;
+      if ($scope.stream.active)
+        setTimeout(loadCount,500)
     })
   }
+
+  /** TRENDS **/
 
   $scope.trends = {
     load: function(woeid){
       if (woeid != null)
-        $http.get('/api/trending/'+woeid).then(function(response){
+        $http.get('/api/trends/'+woeid).then(function(response){
           $scope.trends.values = response.data;
         })
     },
@@ -92,55 +154,8 @@ angular.module('crisisResponse.collection', ['ngRoute','ngFileUpload','google.pl
     values: []
   };
 
-  $http.get('/api/trending/options').then(function(response){
+  $http.get('/api/trends/options').then(function(response){
     $scope.trends.locations = response.data
   });
   $scope.trends.load(1);
-
-
-  $scope.streamtags = [];
-  $scope.stream = {
-    active: false,
-    name: null,
-    time: null,
-    count: 0,
-    location: null,
-    start: function() {
-      var config = {
-        name: $scope.stream.name,
-        query: $scope.streamtags,
-        lat: $scope.stream.location.geometry.location.lat(),
-        lon: $scope.stream.location.geometry.location.lng(),
-        time: moment($scope.stream.time).unix()
-      }
-      $http.post('/api/stream/start',config).then(function(){
-        $scope.stream.active = true;
-        setTimeout(loadCollections,500);
-        setTimeout($scope.stream.loadCount,500);
-      })
-    },
-    stop: function(){
-      $http.post("/api/stream/end").then(function(response){
-        $scope.stream.active = false;
-        $scope.stream.name = null;
-        $scope.stream.time = null;
-        $scope.stream.location = null;
-        $scope.streamtags = [];
-        setTimeout(updateCollections, 500);
-      })
-    },
-    ready: function(){
-      return $scope.stream.name != null && $scope.stream.name != "" &&
-             $scope.streamtags.length > 0 &&
-             $scope.stream.time != null && $scope.stream.time != "" &&
-             $scope.stream.location && typeof $scope.stream.location === 'object' && "geometry" in $scope.stream.location
-    },
-    loadCount: function(){
-      $http.get('/api/stream/status').then(function(response){
-        $scope.stream.count = response.data.count;
-        if ($scope.stream.active)
-          setTimeout($scope.stream.loadCount,500)
-      })
-    }
-  };
 });

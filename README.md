@@ -1,3 +1,3 @@
 # Crisis Response System #
 
-[![Build Status](https://travis-ci.org/robertbastian/crisisResponse.svg?branch=master)](https://travis-ci.org/robertbastian/crisisResponse)
+This web application was built as the third year project for my Comptuter Science degree. The report can be found in [this repo](https://github.com/robertbastian/report).

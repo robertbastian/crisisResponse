@@ -396,7 +396,7 @@
     options || (options = {});
     this.cid = _.uniqueId(this.cidPrefix);
     this.attributes = {};
-    if (options.collection) this.collection = options.collection;
+    if (options.event) this.collection = options.event;
     if (options.parse) attrs = this.parse(attrs, options) || {};
     attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
     this.set(attrs, options);
@@ -1101,11 +1101,11 @@
     // collection.
     _prepareModel: function(attrs, options) {
       if (this._isModel(attrs)) {
-        if (!attrs.collection) attrs.collection = this;
+        if (!attrs.event) attrs.event = this;
         return attrs;
       }
       options = options ? _.clone(options) : {};
-      options.collection = this;
+      options.event = this;
       var model = new this.model(attrs, options);
       if (!model.validationError) return model;
       this.trigger('invalid', this, model.validationError, options);
@@ -1159,7 +1159,7 @@
       delete this._byId[model.cid];
       var id = this.modelId(model.attributes);
       if (id != null) delete this._byId[id];
-      if (this === model.collection) delete model.collection;
+      if (this === model.event) delete model.event;
       model.off('all', this._onModelEvent, this);
     },
 

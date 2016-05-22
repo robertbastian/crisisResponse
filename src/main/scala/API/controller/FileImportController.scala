@@ -5,10 +5,10 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.ConcurrentLinkedQueue
-
+import API.stuff.FutureImplicits._
 import API.controller.FileImportController.ImportFormat
 import API.database._
-import API.model.Tweet
+import API.model.{Event, Tweet}
 import API.remotes.Twitter
 import com.github.marklister.collections.io._
 import twitter4j._
@@ -19,15 +19,16 @@ import scala.concurrent.duration.Duration
 import scala.io.Source
 import scala.language.postfixOps
 
-class FileImportController(name: String,input: InputStream) extends ImportController(name, 0.0, 0.0, 0, None) {
-  collection map { collection =>
-    var id = collection.id.get << 32 // 2^32 tweets per import should be enough
-    val tweets = FileImportController.parse(Source.fromInputStream(input).getLines.mkString("\n")) map {case (text, author, time, lat, long) =>
-      id += 1
-      ImportFormat(id,text,author,time,lat,long)
+class FileImportController(e: Event,input: InputStream) extends ImportController(e) {
+  createdEvent map { event =>
+
+    var id = event.id.get << 32 // 2^32 tweets per import should be enough, Twitter API ids start at 2<<53
+    val tweets = FileImportController.parse(Source.fromInputStream(input).getLines.mkString("\n")) map {
+      case (text, author, time, lat, long) => id += 1; ImportFormat(id,text,author,time,lat,long)
     }
-    analyze(tweets)
-  } onFailure {case _ => collection map {c => println("Invalid CSV...deleting"); CollectionDao delete c}}
+        finishedCollecting(tweets)
+
+  } onFailure {case _ => createdEvent map {e => EventDao.delete(e.id) thenLog "Invalid CSV...deleting"}}
 }
 
 object FileImportController {

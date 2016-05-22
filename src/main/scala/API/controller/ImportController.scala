@@ -1,36 +1,38 @@
 package API.controller
 
 import API.database._
-import API.metrics.{TweetMetrics, Helpers, UserMetrics}
-import twitter4j.{Status, User}
-import API.stuff.LoggableFuture._
+import API.database.EventDao.updateStatus
+import API.metrics.{TweetMetrics, UserMetrics}
+import API.model.{Types, Event, Tweet, User}
+import API.remotes.Twitter
+import API.stuff.FutureImplicits._
+import Types.{Interaction, Word}
+import twitter4j.Status
 
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ImportController(name: String, lon: Double, lat: Double, time: Long, query: Option[String]) {
+class ImportController(e: Event) {
 
-  val collection = CollectionDao.create(name,lon,lat,time,query)
+  val createdEvent = EventDao.save(e)
 
-  protected def analyze(tweets: Iterable[Status]): Future[Unit] = collection flatMap {collection =>
-    CollectionDao.step(collection)
+  private def process(tweets: Iterable[Status], event: Event): Future[Int] = {
+    val analyse = for {
+      usermap <- UserMetrics(tweets.map(_.getUser))
+      (tweets,users,words,interactions) <- TweetMetrics(event,tweets,usermap)
+      additionalUsers <- UserMetrics(Twitter.users(interactions.map(_._2).filterNot(users.map(_.name).contains)))
+    } yield (users ++ additionalUsers.values, tweets, words, interactions)
 
-    val users = tweets.map(_.getUser).filterNot(_ == null).toSet
+    val store = (r: (Iterable[User],Iterable[Tweet],Iterable[Word],Iterable[Interaction])) =>
+      UserDao.save(r._1) >> TweetDao.save(r._2) >>  WordsDao.save(r._3) >> InteractionDao.save(r._4)
 
-    val wordcounts = new mutable.HashSet[(String,String,Long)]
-    val userinteraction = new mutable.HashSet[(String,String,Long)]
-    val tweetMetrics = new TweetMetrics(collection,wordcounts,userinteraction)
-    val userMetrics = new UserMetrics
+    (analyse >>= store) >> updateStatus(event)
+  }
 
-    val analyzing = for {
-      users <- userMetrics.process(users) thenLog s"Analysed users"
-      _ <- UserDao.save(users.values) thenLog s"Stored users"
-      tweets <- tweetMetrics.process(tweets, users) thenLog s"Analysed ${tweets.size} tweets"
-      _ <- TweetDao.create(tweets) flatMap {_ => for (_ <- WordsDao.save(wordcounts);_ <- InteractionDao.save(userinteraction)) yield ()} thenLog s"Stored tweets, words and interactions"
-    } yield ()
-
-    analyzing map { case () => CollectionDao.step(collection); println(s"Done analysing collection $collection")
-    } recover { case e: Throwable => CollectionDao.delete(collection); e.printStackTrace(); println(s"Failure analysing collection $collection...deleting")}
+  protected def finishedCollecting(tweets: Iterable[Status]): Unit = createdEvent map { event =>
+    updateStatus(event)
+    process(tweets,event) onFailure {
+      case e: Throwable => e.printStackTrace(); EventDao.delete(event.id) thenLog s"Failure analysing event ${event.name}...deleted"
+    }
   }
 }

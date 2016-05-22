@@ -15,13 +15,7 @@ angular.module('crisisResponse.selection', ['ngRoute'])
       $location.path('/analysis')
     };
 
-    var HISTOGRAMS = [
-      {selector: "sentiment",buckets: 10, color: "cyan"},
-      {selector: "corroboration", buckets: 10, color: "cyan"},
-      {selector: "competence", buckets: 10, color: "cyan"},
-      {selector: "popularity", buckets: 10, color: "cyan"},
-      {selector: "time", buckets: 0, color: "cyan"}
-    ];
+    var HISTOGRAMS = ["sentiment","corroboration","competence","popularity","time"];
 
     $scope.filter = gloVars.filter();
     $scope.count = {selected: "?", all: "?"};
@@ -30,16 +24,16 @@ angular.module('crisisResponse.selection', ['ngRoute'])
       $http.post("/api/count",$scope.filter).success(function(response){
         $scope.count = response;
       });
-      HISTOGRAMS.forEach(function(o){
-        $http.post("/api/histogram/"+ o.selector + "/" + o.buckets,$scope.filter).then(function(response){
-            makeHistogram(o.selector,response.data.buckets, response.data.min, response.data.max, o.color)
-          },console.log);
-      });
     };
-
     $scope.change();
 
-    function makeHistogram(selector,data,minX,maxX,color) {
+    HISTOGRAMS.forEach(function(selector){
+      $http.post("/api/histogram/"+selector,$scope.filter).then(function(response){
+        makeHistogram(selector,response.data.buckets, response.data.min, response.data.max)
+      },console.log);
+    });
+
+    function makeHistogram(selector,data,minX,maxX) {
       var obj = $('#'+selector);
 
       obj.empty();
@@ -70,7 +64,7 @@ angular.module('crisisResponse.selection', ['ngRoute'])
         .attr("y", function (d) { return h - (d / max * h); })
         .attr("width", (w-40) / data.length - barPadding)
         .attr("height", function (d) { return d / max * h; })
-        .attr("fill", color);
+        .attr("fill", ["cyan","green","orange","gray"][Math.floor(Math.random()*4)]);
 
       var brush = d3.svg.brush().x(x);
       if ($scope.filter[selector] != null)
@@ -100,5 +94,5 @@ angular.module('crisisResponse.selection', ['ngRoute'])
 
       brushg.selectAll("rect")
         .attr("height", h);
-    };;;
+    }
   });

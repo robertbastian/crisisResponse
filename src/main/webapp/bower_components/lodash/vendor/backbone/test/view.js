@@ -401,18 +401,18 @@
     var View = Backbone.View.extend({
       initialize: function() {
         this.listenTo(this.model, 'all x', function(){ assert.ok(false); });
-        this.listenTo(this.collection, 'all x', function(){ assert.ok(false); });
+        this.listenTo(this.event, 'all x', function(){ assert.ok(false); });
       }
     });
 
     var myView = new View({
       model: new Backbone.Model,
-      collection: new Backbone.Collection
+      event: new Backbone.Collection
     });
 
     myView.stopListening();
     myView.model.trigger('x');
-    myView.collection.trigger('x');
+    myView.event.trigger('x');
   });
 
   QUnit.test('Provide function for el.', function(assert) {

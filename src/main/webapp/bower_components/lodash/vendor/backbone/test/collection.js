@@ -580,7 +580,7 @@
     assert.equal(this.syncArgs.method, 'create');
     assert.equal(this.syncArgs.model, model);
     assert.equal(model.get('label'), 'f');
-    assert.equal(model.collection, collection);
+    assert.equal(model.event, collection);
   });
 
   QUnit.test('create with validate:true enforces validation', function(assert) {
@@ -1602,7 +1602,7 @@
         calls.remove++;
         assert.equal(this._byId[model.id], void 0);
         assert.equal(this._byId[model.cid], void 0);
-        assert.equal(model.collection, void 0);
+        assert.equal(model.event, void 0);
         assert.equal(model._events, void 0);
       }
 

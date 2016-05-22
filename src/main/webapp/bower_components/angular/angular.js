@@ -8911,7 +8911,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             };
             parentValueWatch.$stateful = true;
             var removeWatch;
-            if (definition.collection) {
+            if (definition.event) {
               removeWatch = scope.$watchCollection(attrs[attrName], parentValueWatch);
             } else {
               removeWatch = scope.$watch($parse(attrs[attrName], parentValueWatch), null, parentGet.literal);

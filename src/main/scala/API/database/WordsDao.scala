@@ -1,21 +1,18 @@
 package API.database
 
 import API.database.DatabaseConnection.db
-import API.database.WordsDao.Word
 import API.model.Filter
-import API.stuff.LoggableFuture._
+import API.model.Types.Word
 import slick.driver.PostgresDriver.api._
+import UserDao.UsersTable
 
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
 object WordsDao {
 
-  case class Word(text:String, kind: String, weight:Int, sentiments: Seq[Double], trustworthinesses: Seq[Double])
-
-  private class WordsTable(tag: Tag) extends Table[(String,String,Long)](tag, "Words"){
+  private class WordsTable(tag: Tag) extends Table[Word](tag, "Words"){
     def word = column[String]("word")
     def kind = column[String]("type")
     def tweet = column[Long]("tweet")
@@ -24,21 +21,22 @@ object WordsDao {
 
   private val words = TableQuery[WordsTable]
 
-  def save(set: mutable.Set[(String,String,Long)]): Future[Option[Int]] = db run (words  ++= set)
+  def save(ws: Iterable[(String,String,Long)]): Future[Option[Int]] = db run (words ++= ws)
 
-  def getAll(filter: Filter): Future[Seq[Seq[Word]]] = {
+  case class RichWord(text:String, kind: String, weight:Int, sentiments: Seq[Double], trustworthinesses: Seq[Double])
+  def getAll(filter: Filter): Future[Seq[Seq[RichWord]]] = {
     val query = for {
       word <- words
-      tweet <- TweetDao.filtered(filter)
+      (tweet,user) <- TweetDao.filtered(filter) joinLeft UserDao.users on (_.author === _.name)
       if word.tweet === tweet.id
-    } yield (word.word,word.kind,(tweet.sentiment,tweet.proximity))
+    } yield (word.word,word.kind,(tweet,user))
 
     db.run(query.result) map { selected  =>
 
-      val names = Seq.newBuilder[Word]
-      val hashtags = Seq.newBuilder[Word]
-      val urls = Seq.newBuilder[Word]
-      val rest = Seq.newBuilder[Word]
+      val names = Seq.newBuilder[RichWord]
+      val hashtags = Seq.newBuilder[RichWord]
+      val urls = Seq.newBuilder[RichWord]
+      val rest = Seq.newBuilder[RichWord]
 
       def makeGradient(values: Seq[Double]): Seq[Double] = {
         val total = values.size.toDouble
@@ -48,17 +46,20 @@ object WordsDao {
         )
       }
 
-      val groupedWords = selected groupBy(_._1) map { case (word, aggregates) =>
-        val (_,kinds,metrics) = aggregates.unzip3
+      val groupedWords = selected groupBy(_._1.toLowerCase) map { case (_, aggregates) =>
+        val (_,kinds,tweetsAndUsers) = aggregates.unzip3
         val kind = kinds.sortBy(-_.length).head // Shortest 'kind' dominates
-        val sentiments = makeGradient(metrics.map(_._1))
-        val trustworthinesses  = makeGradient(metrics.map(_._2))
+        val sentiments = makeGradient(tweetsAndUsers.map{case (tweet,_) => tweet.sentiment})
+        val trustworthinesses  = makeGradient(tweetsAndUsers.map { case (tweet, user) =>
+//          (tweet.corroboration + tweet.recency + tweet.proximity + user.map(_.popularity).getOrElse(0.0) + user.map(_.competence).getOrElse(0.0)) / 5
+          (tweet.corroboration + tweet.recency + user.map(_.popularity).getOrElse(0.0) + user.map(_.competence).getOrElse(0.0)) / 4
+        })
         (kind match {
           case "LOCATION" | "ORGANIZATION" | "PERSON" => names
           case "HASHTAG" => hashtags
           case "URL" => urls
           case _ => rest
-        }) += Word(word,kind,aggregates.length,sentiments,trustworthinesses)
+        }) += RichWord(aggregates.head._1,kind,aggregates.length,sentiments,trustworthinesses)
       }
       Seq(hashtags.result,names.result,urls.result,rest.result)
     }
