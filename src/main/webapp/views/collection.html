@@ -80,7 +80,7 @@
                 <md-button class="md-primary md-raised" ng-click="stopStream()" ng-show="stream.active">
                     <label>Finish collecting</label>
                 </md-button>
-                <span ng-show="stream.active">{{stream.count}} Tweets collected</span>
+                <span ng-show="stream.active"><br>{{stream.count}} Tweets collected</span>
                 <md-progress-circular md-mode="indeterminate" ng-show="stream.active"></md-progress-circular>
             </md-card-content>
         </md-card>

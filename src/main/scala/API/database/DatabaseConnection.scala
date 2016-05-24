@@ -10,9 +10,9 @@ object DatabaseConnection {
   private lazy val connectionPool = {
     val c = new ComboPooledDataSource
     c.setDriverClass("org.postgresql.Driver")
-    c.setJdbcUrl("jdbc:postgresql://"+sys.env("DB_URL")+":5432/main")
-    c.setUser("root")
-    c.setPassword(sys.env("DB_ROOT_PASSWORD"))
+    c.setJdbcUrl("jdbc:postgresql://"+sys.env("DB_URL")+":5432/"+sys.env("DB_DB"))
+    c.setUser(sys.env("DB_USER"))
+    c.setPassword(sys.env("DB_PASSWORD"))
     c.setMinPoolSize(1)
     c.setMaxPoolSize(50)
     c.setAcquireIncrement(1)

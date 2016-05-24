@@ -158,30 +158,6 @@ class Server extends ScalatraServlet
     }
   }
 
-  /** DEBUG **/
-
-  get("/initM"){
-    async {
-      val i = new FileImportController(Event(None,"Medium",-80.0145,32.8982,1428154200L,None), new FileInputStream("resources/medium.csv"))
-      i.createdEvent map {Created(_)}
-    }
-  }
-
-  get("/initS"){
-    async {
-      val i = new FileImportController(Event(None,"Small",-80.0145,32.8982,1428154200L,None), new FileInputStream("resources/short.csv"))
-      i.createdEvent map {Created(_)}
-    }
-  }
-
-  get("/addUsers"){
-    async {
-      InteractionDao.unanlysedUsers map { ns =>
-        metrics.UserMetrics(Twitter.users(ns)).map(m => UserDao.save(m.values))
-      }
-    }
-  }
-
   // JSON config
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 

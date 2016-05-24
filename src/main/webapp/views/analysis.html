@@ -102,13 +102,17 @@
                     <md-tab md-active="selected.tweets._2.length > 0" label="Mentioned">
                         <md-tab-label>Mentioned</md-tab-label>
                         <md-tab-body>
-                            <ul><p ng-repeat="tweet in selected.tweets._2">{{tweet.text}}<br><small>– @{{tweet.author}}</small></p></ul>
+                            <div style="max-height: 647px;overflow: scroll;">
+                                <ul><p ng-repeat="tweet in selected.tweets._2">{{tweet.text}}<br><small>– @{{tweet.author}}</small></p></ul>
+                            </div>
                         </md-tab-body>
                     </md-tab>
                     <md-tab md-active="selected.tweets._2.length == 0" label="Posted">
                         <md-tab-label>Posted</md-tab-label>
                         <md-tab-body>
-                            <ul><li ng-repeat="tweet in selected.tweets._1">{{tweet.text}}</li></ul>
+                            <div style="max-height: 647px;overflow: scroll;">
+                                <ul><li ng-repeat="tweet in selected.tweets._1">{{tweet.text}}</li></ul>
+                            </div>
                         </md-tab-body>
                     </md-tab>
                 </md-tabs>
